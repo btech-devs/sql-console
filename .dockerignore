@@ -1,0 +1,23 @@
+# exclude TESTS
+#*test*
+#*Test*
+#Tests/*
+TestResults/*
+
+# exclude logs
+*log*
+
+# exclude PDB
+*.pdb
+
+#**/bin
+#**/obj
+
+#bin/
+#obj/
+
+#node_modules/
+#**/node_modules/
+
+package-lock.json
+**/package-lock.json
