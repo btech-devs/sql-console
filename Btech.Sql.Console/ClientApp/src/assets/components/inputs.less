@@ -1,0 +1,77 @@
+﻿.combined-input .form-floating:first-child .form-control {
+  border-bottom-right-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.combined-input .form-floating:last-child .form-control {
+  border-bottom-left-radius: 0;
+  border-top-left-radius: 0;
+}
+
+.form-floating > .form-control-plaintext:focus,
+.form-floating > .form-control-plaintext:not(:placeholder-shown),
+.form-floating > .form-control:focus,
+.form-floating > .form-control:not(:placeholder-shown) {
+  padding: 0 0.75rem;
+}
+
+.form-floating > .form-control,
+.form-floating > .form-control-plaintext,
+.form-floating > .form-select {
+  height: calc(2.5rem + 2px);
+  line-height: 1;
+}
+
+.form-floating > label {
+  padding: 0.5rem 0.75rem;
+  opacity: .65;
+}
+
+.form-floating > label > span {
+  background: white;
+  outline: 3px solid white;
+  user-select: none;
+}
+
+input::placeholder {
+  user-select: none;
+}
+
+input.ng-invalid.ng-touched {
+  border: red 1px solid;
+}
+
+.form-floating > .form-control:not(:placeholder-shown) ~ label, .form-floating > .form-control:focus ~ label {
+  transform: scale(.85) translateY(-1.25rem) translateX(0.15rem);
+  opacity: 1;
+}
+
+.form-floating > .form-select ~ label {
+  transform: none;
+}
+
+.form-floating > .form-select.selected ~ label {
+  transform: scale(.85) translateY(-1.25rem) translateX(0.15rem);
+  opacity: 1;
+}
+
+.form-floating > .form-select {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.alert-validation{
+  & input, & select, & textarea{
+    position: relative;
+    z-index: 1041;
+  }
+  & .alert{
+    margin-top: -10px;
+    padding-top: 20px !important;
+    position: relative;
+    z-index: 1040;
+  }
+  & label{
+    z-index: 1042;
+  }
+}

@@ -1,0 +1,216 @@
+<div class="container h-100">
+    <div class="row justify-content-center">
+        <div class="col-sm-10 col-md-8 col-lg-6 col-xl-6 col-xxl-6">
+            <div class="row">
+                <div class="text-center font-size-lg">
+                    <span>
+                        Instance credentials
+                    </span>
+                </div>
+            </div>
+            <hr>
+            <div class="margin-top">
+                <form class="connection-form"
+                      [formGroup]="this.connectionForm">
+                    <!-- INSTANCE TYPE -->
+                    <div class="input-validated alert-validation">
+                        <div class="form-floating">
+                            <select class="form-select"
+                                    id="instanceTypeInputId"
+                                    formControlName="instanceType"
+                                    [ngClass]="{'is-invalid' : this.connectionForm.controls['instanceType'].touched && !this.connectionForm.controls['instanceType'].valid}"
+                                    required
+                                    (change)="this.selected($event)">
+                                <!-- for Safari -->
+                                <option *ngIf="!this.connectionForm.value.select" [ngValue]="null" selected disabled></option>
+                                <option *ngFor="let option of options"
+                                        [value]="option.value">
+                                  {{option.description}}
+                                </option>
+                            </select>
+                            <label for="instanceTypeInputId">
+                                <span>Instance type</span>
+                            </label>
+                        </div>
+                        <div class="alert alert-danger d-flex align-items-center shadow"
+                             role="alert"
+                             *ngIf="this.connectionForm.controls['instanceType'].touched &&
+                             this.connectionForm.controls['instanceType'].errors != null">
+                            <div *ngIf="this.connectionForm.controls['instanceType'].hasError('required')">
+                                Instance type is not specified
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert-validation">
+                        <div class="d-flex bd-highlight combined-input mt-3">
+                            <!-- HOST -->
+                            <div class="form-floating flex-grow-1">
+                                <input type="text"
+                                       [maxLength]="hostMaxLength"
+                                       [ngClass]="{'is-invalid' : this.connectionForm.controls['host'].touched && !this.connectionForm.controls['host'].valid}"
+                                       class="form-control"
+                                       formControlName="host"
+                                       placeholder="Host"
+                                       id="hostInputId">
+                                <label for="hostInputId">
+                                <span>
+                                    Host
+                                    <span *ngIf="this.connectionForm.controls['host'].value?.length - this.hostMaxLength >= -15">
+                                        ({{this.hostMaxLength - this.connectionForm.controls['host'].value.length}})
+                                    </span>
+                                </span>
+                                </label>
+                            </div>
+
+                            <!-- PORT -->
+                            <div class="form-floating">
+                                <input type="text"
+                                       inputmode="numeric"
+                                       oninput="this.value = this.value.replace(/[^0-9]/g, '');"
+                                       [maxLength]="portMaxLength"
+                                       [ngClass]="{'is-invalid' : this.connectionForm.controls['port'].touched && !this.connectionForm.controls['port'].valid}"
+                                       class="form-control"
+                                       formControlName="port"
+                                       placeholder="Port"
+                                       id="portInputId">
+                                <label for="portInputId">
+                                    <span>Port</span>
+                                </label>
+                            </div>
+
+                        </div>
+                        <!-- HOST & PORT VALIDATION -->
+                        <div class="mb-0 alert alert-danger align-items-center shadow"
+                             role="alert"
+                             *ngIf="this.connectionForm.controls['host'].touched && this.connectionForm.controls['host'].errors != null ||
+                         this.connectionForm.controls['port'].touched && this.connectionForm.controls['port'].errors != null">
+
+                            <div *ngIf="this.connectionForm.controls['host'].touched && this.connectionForm.controls['host'].hasError('validationError')">
+                                <p>{{this.connectionForm.controls['host'].getError('validationError')}}</p>
+                                <hr>
+                                <div class="fs-7">
+                                    <i>Allowed patterns:</i>
+                                    <ul class="mb-0 ps-3">
+                                        <li>
+                                            Domain:
+                                            <b>domain.com/ROUTE</b>
+                                        </li>
+                                        <li>
+                                            IP:
+                                            <b>127.0.0.1</b>
+                                        </li>
+                                        <li>
+                                            Cloud SQL:
+                                            <b>/cloudsql/CONNECTION_NAME</b>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <hr *ngIf="this.connectionForm.controls['port'].touched && this.connectionForm.controls['port'].hasError('required')">
+                                <hr *ngIf="this.connectionForm.controls['port'].touched && this.connectionForm.controls['port'].hasError('validationError')">
+                            </div>
+                            <div *ngIf="this.connectionForm.controls['port'].touched && this.connectionForm.controls['port'].hasError('required')">
+                                Port is not specified
+                                <hr *ngIf="this.connectionForm.controls['port'].hasError('validationError')">
+                            </div>
+                            <div *ngIf="this.connectionForm.controls['port'].touched && this.connectionForm.controls['port'].hasError('validationError')">
+                                {{this.connectionForm.controls['port'].getError('validationError')}}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- USERNAME -->
+                    <div class="input-validated alert-validation mt-3">
+                        <div class="form-floating">
+                            <input type="text"
+                                   [maxLength]="usernameMaxLength"
+                                   [ngClass]="{'is-invalid' : this.connectionForm.controls['username'].touched && !this.connectionForm.controls['username'].valid}"
+                                   class="form-control"
+                                   formControlName="username"
+                                   placeholder="Username"
+                                   id="usernameInputId"
+                                   required>
+                            <label for="usernameInputId">
+                                <span>
+                                    Username
+                                    <span *ngIf="this.connectionForm.controls['username'].value?.length - this.usernameMaxLength >= -15">
+                                        ({{this.usernameMaxLength - this.connectionForm.controls['username'].value.length}}
+                                        )
+                                    </span>
+                                </span>
+                            </label>
+                        </div>
+                        <div class="alert alert-danger d-flex align-items-center shadow"
+                             role="alert"
+                             *ngIf="this.connectionForm.controls['username'].touched &&
+                             this.connectionForm.controls['username'].errors != null">
+
+                            <div *ngIf="this.connectionForm.controls['username'].hasError('validationError')">
+                                {{this.connectionForm.controls['username'].getError('validationError')}}
+                            </div>
+                            <div *ngIf="this.connectionForm.controls['username'].hasError('required')">
+                                Username is not specified
+                            </div>
+
+                        </div>
+                    </div>
+                    <!-- PASSWORD -->
+                    <div class="input-validated alert-validation mt-3">
+                        <div class="form-floating">
+                            <input type="password"
+                                   [maxLength]="passwordMaxLength"
+                                   [ngClass]="{'is-invalid' : this.connectionForm.controls['password'].touched && !this.connectionForm.controls['password'].valid}"
+                                   class="form-control"
+                                   formControlName="password"
+                                   placeholder="Password"
+                                   id="passwordInputId"
+                                   required>
+                            <label for="passwordInputId">
+                                <span>
+                                    Password
+                                    <span *ngIf="this.connectionForm.controls['password'].value?.length - this.passwordMaxLength >= -15">
+                                        ({{this.passwordMaxLength - this.connectionForm.controls['password'].value.length}}
+                                        )
+                                    </span>
+                                </span>
+                            </label>
+                        </div>
+                        <div class="alert alert-danger d-flex align-items-center shadow"
+                             role="alert"
+                             *ngIf="this.connectionForm.controls['password'].touched &&
+                             this.connectionForm.controls['password'].errors != null">
+
+                            <div *ngIf="this.connectionForm.controls['password'].hasError('validationError')">
+                                {{this.connectionForm.controls['password'].getError('validationError')}}
+                            </div>
+                            <div *ngIf="this.connectionForm.controls['password'].hasError('required')">
+                                Password is not specified
+                            </div>
+
+                        </div>
+                    </div>
+                    <!-- BUTTON -->
+                    <div class="row">
+                        <div class="form-group text-center d-grid col-5 mx-auto">
+                            <br>
+                            <button *ngIf="!this.loading"
+                                    type="submit"
+                                    class="btn btn-outline-success btn-block"
+                                    [disabled]="!connectionForm.valid"
+                                    on-click="onConnect()">
+                                <div>
+                                    <span>Connect</span>
+                                </div>
+                            </button>
+                            <span *ngIf="this.loading"
+                                  class="spinner mt-3">
+                                <span class="double-bounce1"></span>
+                                <span class="double-bounce2"></span>
+                            </span>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

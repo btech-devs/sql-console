@@ -1,0 +1,150 @@
+<div class="modal fade"
+     [id]="this.modalId"
+     tabindex="-1"
+     [attr.aria-labelledby]="this.modalId + '-header'"
+     aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5"
+                    id="{{this.modalId}}-header">
+                    Export to DSV
+                    <small *ngIf="this.isExecuteToDsv"
+                           class="text-muted">
+                        (No additional limits)
+                    </small>
+                </h1>
+            </div>
+            <div class="modal-body">
+                <form [formGroup]="this.formGroup">
+                    <div class="form-floating alert-validation">
+                        <input type="email"
+                               class="form-control"
+                               id="{{this.modalId}}-filename"
+                               placeholder="data"
+                               formControlName="filename"
+                               [ngClass]="{'is-invalid' : !this.formGroup.controls['filename'].valid}">
+                        <label for="{{this.modalId}}-filename"
+                               class="form-label">
+                            <span>File name</span>
+                        </label>
+                        <div class="alert alert-danger d-flex align-items-center shadow"
+                             role="alert"
+                             *ngIf="!this.formGroup.controls['filename'].valid">
+                            <ng-container *ngFor="let error of this.getErrors(this.formGroup.controls['filename'].errors); let errorIndex = index">
+                                <hr *ngIf="errorIndex > 0">
+                                <p class="m-0">{{error}}</p>
+                            </ng-container>
+                        </div>
+                        <!--                        <div id="{{this.modalId}}-filenameFeedback"-->
+                        <!--                             class="invalid-feedback">-->
+                        <!--                            Please provide a valid filename. <br>Does not allowed characters:-->
+                        <!--                            <span class="bg-secondary rounded-1 p-1 text-white">/\.?%*:|"<></span>-->
+                        <!--                        </div>-->
+                    </div>
+                    <div class="form-check mt-3">
+                        <input class="form-check-input"
+                               type="checkbox"
+                               formControlName="includeHeader"
+                               id="{{this.modalId}}-includeHeader">
+                        <label class="form-check-label"
+                               for="{{this.modalId}}-includeHeader">
+                            Include header
+                        </label>
+                    </div>
+                    <div class="form-check mt-3">
+                        <input class="form-check-input"
+                               type="checkbox"
+                               formControlName="addQuotes"
+                               id="{{this.modalId}}-addQuotes">
+                        <label class="form-check-label"
+                               for="{{this.modalId}}-addQuotes">
+                            Add quotes
+                        </label>
+                    </div>
+                    <div class="form-floating mt-3">
+                        <select id="{{this.modalId}}-separator"
+                                formControlName="separator"
+                                class="form-select selected">
+                            <option *ngFor="let item of this.separators"
+                                    [selected]="item.name == this.formGroup.controls['separator'].value.name"
+                                    [ngValue]="item">
+                                {{item.name}}
+                            </option>
+                        </select>
+                        <label for="{{this.modalId}}-separator">
+                            <span>Separator</span>
+                        </label>
+                    </div>
+
+                    <div class="form-floating mt-3">
+                        <select id="{{this.modalId}}-newLine"
+                                formControlName="newLine"
+                                class="form-select selected">
+                            <option *ngFor="let item of this.newLines"
+                                    [selected]="item.name == this.formGroup.controls['newLine'].value.name"
+                                    [ngValue]="item">
+                                {{item.name}}
+                            </option>
+                        </select>
+                        <label for="{{this.modalId}}-newLine">
+                            <span>New line</span>
+                        </label>
+                    </div>
+
+                    <div class="form-floating mt-3">
+                        <select id="{{this.modalId}}-nullOutput"
+                                formControlName="nullOutput"
+                                class="form-select selected">
+                            <option *ngFor="let item of this.nullOutputs"
+                                    [selected]="item.name == this.formGroup.controls['nullOutput'].value.name"
+                                    [ngValue]="item">
+                                {{item.name}}
+                            </option>
+                        </select>
+                        <label for="{{this.modalId}}-nullOutput">
+                            <span>Null output</span>
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer text-end">
+                <button type="button"
+                        class="btn btn-outline-danger"
+                        data-bs-dismiss="modal">
+                    Discard
+                </button>
+                <div class="btn-group"
+                     role="group"
+                     aria-label="export group">
+                    <button [disabled]="this.progress == 3 || this.progress == 4 || !this.formGroup.valid"
+                            type="button"
+                            class="btn btn-outline-success"
+                            (click)="this.export();">
+                        <span *ngIf="this.progress == 3">
+                            Exporting
+                            <span *ngIf="this.blobSize">
+                            ({{this.formatBytes(this.blobSize)}})
+                            </span>
+                            <span class="spinner-border spinner-border-sm"
+                                  role="status"
+                                  aria-hidden="true">
+                            </span>
+                        </span>
+                        <span *ngIf="this.progress == 4">Exported <i class="bi bi-check-circle"></i></span>
+                        <span *ngIf="!this.progress">Export <i class="bi bi-download"></i></span>
+                    </button>
+                    <button *ngIf="this.progress == 3"
+                            type="button"
+                            class="btn btn-outline-danger"
+                            (click)="this.rejectExporting()"
+                            title="Cancel exporting">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<app-confirm-modal #confirmModalComponent></app-confirm-modal>

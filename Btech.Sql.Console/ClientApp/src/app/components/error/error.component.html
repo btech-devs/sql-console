@@ -1,0 +1,19 @@
+<div class="container h-100">
+    <div *ngIf="this.message != undefined">
+        Error: {{this.message}}
+    </div>
+    <div *ngIf="this.message == undefined">
+        Something went wrong.
+        <br>
+        Try again in a few minutes, or call the administrator.
+    </div>
+    <button *ngIf="this.tryAgainButton"
+            type="submit"
+            class="btn btn-outline-success btn-block mt-3"
+            on-click="onTryAgain()">
+        <div>
+            <span>Try again</span>
+        </div>
+    </button>
+
+</div>

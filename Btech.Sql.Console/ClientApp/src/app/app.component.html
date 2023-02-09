@@ -1,0 +1,118 @@
+<!--  <app-nav-menu></app-nav-menu>-->
+
+<header class="header">
+    <div class="container">
+        <div class="row mt-2 justify-content-between">
+            <div class="col-10">
+                <div class="logo__heading-wrapper">
+                    <span class="logo__heading">Cloud SQL Console</span>
+                </div>
+            </div>
+            <div class="col-2 text-end">
+                <div *ngIf = "!this.isExecuting"
+                     class="dropdown">
+                    <button type="button"
+                            class="btn border border-radius-50 p-0 border-2 overflow-hidden account-button"
+                            data-bs-toggle="dropdown"
+                            data-bs-boundary="document"
+                            data-bs-auto-close="true"
+                            aria-expanded="false">
+                        <img *ngIf="this.photoUrl"
+                             src="{{this.photoUrl}}"
+                             alt="photo"
+                             height="33px"
+                             title="Account image"
+                             referrerpolicy="no-referrer">
+                        <svg *ngIf="!this.photoUrl && this.accountAuthenticated"
+                             xmlns="http://www.w3.org/2000/svg"
+                             width="32"
+                             height="32"
+                             fill="currentColor"
+                             class="bi bi-person p-1"
+                             viewBox="0 0 16 16">
+                            <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0Zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4Zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10Z"/>
+                        </svg>
+                    </button>
+
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <ng-container *ngIf="this.sessionAuthenticated">
+                                <button class="dropdown-item"
+                                        (click)="this.duplicateConnection()">
+                                    <i class="bi bi-window-stack"></i>
+                                    Duplicate connection
+                                    <i class="bi bi-box-arrow-up-right"></i>
+                                </button>
+                                <button class="dropdown-item"
+                                        (click)="this.newConnection()">
+                                    <i class="bi bi-window-plus"></i>
+                                    New connection
+                                    <i class="bi bi-box-arrow-up-right"></i>
+                                </button>
+                                <button class="dropdown-item"
+                                        (click)="this.changeInstance()">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                    Change instance
+                                </button>
+                            </ng-container>
+                            <button *ngIf="this.accountAuthenticated"
+                                    class="dropdown-item"
+                                    (click)="this.logOut()">
+                                <i class="bi bi-box-arrow-right"></i>
+                                Log out
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <span *ngIf="this.isExecuting"
+                      class="spinner-grow spinner-grow-sm me-1"
+                      role="status"
+                      aria-hidden="true">
+                </span>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12">
+                <hr class="mt-2 mb-0"/>
+            </div>
+        </div>
+    </div>
+</header>
+<div class="main mt-3">
+    <router-outlet></router-outlet>
+    <div class="margin-top"></div>
+    <div *ngIf="this.errorMessage"
+         [@transitionAnimation]
+         class="alert alert-danger global-alert align-items-center fade show d-flex justify-content-between"
+         role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span copied
+              copiedMessage="The alert message has been copied."
+              class="margin-left-sm">
+            {{ this.errorMessage }}
+        </span>
+        <i class="bi bi-x-lg margin-left-sm"
+           role="button"
+           data-bs-dismiss="alert"
+           aria-label="Close"
+           (click)="this.errorMessage = undefined"></i>
+    </div>
+    <div *ngIf="this.infoMessage"
+         [@transitionAnimation]
+         class="alert alert-success global-alert align-items-center fade show d-flex justify-content-between"
+         role="alert">
+        <i class="bi bi-check-circle-fill"></i>
+        <span copied
+              copiedMessage="The alert message has been copied."
+              class="margin-left-sm">
+            {{ this.infoMessage }}
+        </span>
+        <i class="bi bi-x-lg margin-left-sm"
+           role="button"
+           data-bs-dismiss="alert"
+           aria-label="Close"
+           (click)="this.infoMessage = undefined"></i>
+    </div>
+</div>
+
+<app-confirm-modal #confirmModalComponent></app-confirm-modal>

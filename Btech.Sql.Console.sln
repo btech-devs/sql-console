@@ -1,0 +1,33 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Btech.Sql.Console", "Btech.Sql.Console\Btech.Sql.Console.csproj", "{1E972C0B-45D7-413A-AD9D-DC8D3A92DC4C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{B8504CE6-1CAE-46BB-BFD0-20100F2A05CE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Btech.Sql.Console.Test", "Tests\Btech.Sql.Console.Test\Btech.Sql.Console.Test.csproj", "{9C62EE26-890F-451F-BA5E-34668C3199ED}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Btech.Core.Database", "Btech.Core.Database\Btech.Core.Database.csproj", "{086DF746-C6D6-430B-B32B-712479A19BAB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1E972C0B-45D7-413A-AD9D-DC8D3A92DC4C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1E972C0B-45D7-413A-AD9D-DC8D3A92DC4C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1E972C0B-45D7-413A-AD9D-DC8D3A92DC4C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1E972C0B-45D7-413A-AD9D-DC8D3A92DC4C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9C62EE26-890F-451F-BA5E-34668C3199ED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9C62EE26-890F-451F-BA5E-34668C3199ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9C62EE26-890F-451F-BA5E-34668C3199ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9C62EE26-890F-451F-BA5E-34668C3199ED}.Release|Any CPU.Build.0 = Release|Any CPU
+		{086DF746-C6D6-430B-B32B-712479A19BAB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{086DF746-C6D6-430B-B32B-712479A19BAB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{086DF746-C6D6-430B-B32B-712479A19BAB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{086DF746-C6D6-430B-B32B-712479A19BAB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{9C62EE26-890F-451F-BA5E-34668C3199ED} = {B8504CE6-1CAE-46BB-BFD0-20100F2A05CE}
+	EndGlobalSection
+EndGlobal

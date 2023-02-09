@@ -1,0 +1,35 @@
+@import "../utils/responsive";
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////// Grid cols ///////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+@counter: 0;
+
+.loop(@counter) when (@counter <= 12) {
+    .generate-responsive-classes(
+        ~"col-@{counter}",
+    {
+        position: relative;
+        min-height: 1px;
+        padding-right: 15px;
+        padding-left: 15px;
+        width: 8.33333333% * @counter;
+    }
+    );
+    .generate-responsive-classes(
+        ~"col-pull-@{counter}",
+    {
+        right: 8.33333333% * @counter;
+    }
+    );
+    .generate-responsive-classes(
+        ~"col-push-@{counter}",
+    {
+        left: 8.33333333% * @counter;
+    }
+    );
+    .loop(@counter + 1);
+}
+
+.loop(@counter);
