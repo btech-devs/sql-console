@@ -10,18 +10,21 @@ export class JwtService {
     }
 
     private verifySignature(token: string, publicKey: string) : boolean {
-        let result: boolean = false;
 
         let decodedJwt = decode(token);
+        let verificationResult : boolean = false;
 
         try {
-            result = verify(token, decodedJwt.header.alg, publicKey);
-        }
-        catch(error) {
+            verificationResult = verify(token, decodedJwt.header.alg, publicKey);
+        } catch (error) {
             throw new Error('Signature verification failed.');
         }
 
-        return result;
+        if (!verificationResult) {
+            throw new Error('Signature verification failed.');
+        }
+
+        return true;
     }
 
     private verifyToken(token: string) : boolean {

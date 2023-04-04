@@ -1,8 +1,8 @@
-import {Component, ViewChild} from '@angular/core';
+import {Component, ViewChild, ViewContainerRef} from '@angular/core';
 import {
     ACCOUNT_PICTURE_URL_KEY,
     AlertStorage,
-    getTransitionAnimation, ID_TOKEN_KEY,
+    getTransitionAnimation, ID_TOKEN_KEY, IS_STATIC_CONNECTION_KEY,
     PATH_CONNECTION,
     PATH_GOOGLE_AUTHORIZATION,
     SESSION_TOKEN_KEY
@@ -14,7 +14,7 @@ import {GoogleAuthService} from './_services/google-auth.service';
 import {map} from 'rxjs';
 import {Response} from './_models/responses/base/response';
 import {ConnectionService} from './_services/connection.service';
-import {ConfirmModalComponent} from './components/confirmModal/confirmModal.component';
+import {ConfirmModalService} from './components/confirm-modal/confirm-modal.service';
 
 @Component({
     selector: 'app-root',
@@ -27,12 +27,14 @@ export class AppComponent {
     private _accountAuthenticated: boolean;
     private _sessionAuthenticated: boolean;
     private _isExecuting: boolean;
-    @ViewChild('confirmModalComponent') confirmModalComponent!: ConfirmModalComponent;
 
     constructor(
+        public viewContainerRef: ViewContainerRef,
         private _router: Router,
         private _googleAuthService: GoogleAuthService,
-        private _connectionService: ConnectionService) {
+        private _connectionService: ConnectionService,
+        private _confirmService: ConfirmModalService) {
+
         this._photoUrl = null;
         this._accountAuthenticated = false;
         this._sessionAuthenticated = false;
@@ -43,7 +45,11 @@ export class AppComponent {
         return this._isExecuting ?? false;
     }
 
-    set isExecuting(value : boolean) {
+    get isStaticConnection(): boolean {
+        return SessionStorageService.get(IS_STATIC_CONNECTION_KEY) == 'true'
+    }
+
+    set isExecuting(value: boolean) {
         this._isExecuting = value;
     }
 
@@ -87,8 +93,7 @@ export class AppComponent {
 
         this._googleAuthService
             .closeSession()
-            .subscribe(next =>
-            {
+            .subscribe(next => {
                 LocalStorageService.clear();
                 SessionStorageService.clear();
                 this.isExecuting = false;
@@ -116,27 +121,29 @@ export class AppComponent {
             this._router.navigate([PATH_CONNECTION]);
         };
 
-        this.confirmModalComponent.confirm(
-            () => {
-                this.isExecuting = true;
+        this._confirmService.confirm('Close current connection on all tabs?')
+            .subscribe(result => {
+                if (result) {
+                    this.isExecuting = true;
 
-                this._connectionService
-                    .close()
-                    .pipe(
-                        map((event: Response<undefined>) => {
-                            if (event.errorMessage == undefined) {
-                                complete();
-                            } else {
-                                AlertStorage.error = event.errorMessage;
-                            }
+                    this._connectionService
+                        .close()
+                        .pipe(
+                            map((event: Response<undefined>) => {
+                                if (event.errorMessage == undefined) {
+                                    complete();
+                                } else {
+                                    AlertStorage.error = event.errorMessage;
+                                }
 
-                            return event;
-                        }))
-                    .subscribe(next => {
-                        this.isExecuting = false;
-                    });
-            },
-            complete,
-            'Close current connection on all tabs?');
+                                return event;
+                            }))
+                        .subscribe(next => {
+                            this.isExecuting = false;
+                        });
+                } else {
+                    complete();
+                }
+            });
     }
 }

@@ -62,7 +62,7 @@ export class AuthInterceptor implements HttpInterceptor {
                 if (error.headers.has(IDENTITY_ERROR_HEADER_KEY)) {
                     AlertStorage.error = error.headers.get(IDENTITY_ERROR_HEADER_KEY)!;
                 } else {
-                    AlertStorage.error = 'Access forbidden. Please, call the administrator.';
+                    AlertStorage.error = 'Access forbidden. You do not have permission for this action.';
                 }
             }
 

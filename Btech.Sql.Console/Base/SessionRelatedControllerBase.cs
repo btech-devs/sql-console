@@ -1,7 +1,5 @@
 using Btech.Sql.Console.Enums;
 using Btech.Sql.Console.Extensions;
-using Btech.Sql.Console.Interfaces;
-using Btech.Sql.Console.Models;
 using Btech.Sql.Console.Utils;
 using Microsoft.AspNetCore.Authorization;
 
@@ -11,7 +9,8 @@ namespace Btech.Sql.Console.Base;
 public abstract class SessionRelatedControllerBase : UserAuthorizedControllerBase
 {
     protected SessionRelatedControllerBase(
-        ILogger logger, ISessionStorage<SessionData> sessionStorage) : base(logger, sessionStorage)
+        ILogger logger)
+        : base(logger)
     {
     }
 

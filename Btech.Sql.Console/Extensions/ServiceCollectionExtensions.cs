@@ -2,12 +2,15 @@ using System.Text;
 using Btech.Core.Database.Extensions;
 using Btech.Sql.Console.Configurations;
 using Btech.Sql.Console.DataStorages;
+using Btech.Sql.Console.Enums;
+using Btech.Sql.Console.Exceptions;
 using Btech.Sql.Console.Factories;
 using Btech.Sql.Console.Identity;
 using Btech.Sql.Console.Interfaces;
 using Btech.Sql.Console.Models;
 using Btech.Sql.Console.Models.Database;
 using Btech.Sql.Console.Providers;
+using Btech.Sql.Console.Services;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json.Converters;
 
@@ -107,28 +110,135 @@ public static class ServiceCollectionExtensions
         serviceCollection
             .AddSingleton<IConnectorFactory, ConnectorFactory>();
 
+    public static SessionStorageScheme GetSessionStorageScheme()
+    {
+        SessionStorageScheme scheme;
+
+        bool isStaticSessionStorage =
+            !Environment.GetEnvironmentVariable(Constants.Identity.StaticConnectionEnvironmentVariables.Host).IsNullOrEmpty() &&
+            !Environment.GetEnvironmentVariable(Constants.Identity.StaticConnectionEnvironmentVariables.User).IsNullOrEmpty() &&
+            !Environment.GetEnvironmentVariable(Constants.Identity.StaticConnectionEnvironmentVariables.Password).IsNullOrEmpty();
+
+        if (isStaticSessionStorage)
+        {
+            string instanceType = Environment
+                .GetEnvironmentVariable(Constants.Identity.StaticConnectionEnvironmentVariables.InstanceType);
+
+            if (instanceType.IsNullOrEmpty())
+                isStaticSessionStorage = false;
+            else if (!Enum.TryParse(instanceType, true, out InstanceType _))
+                throw new EnvironmentVariableException($"'{Constants.Identity.StaticConnectionEnvironmentVariables.InstanceType}' can not be parsed.");
+        }
+
+        if (isStaticSessionStorage)
+        {
+            scheme = SessionStorageScheme.StaticSessionStorage;
+        }
+        else if (!Environment.GetEnvironmentVariable(Core.Database.Constants.Environment.Database.Host).IsNullOrEmpty() &&
+                 !Environment.GetEnvironmentVariable(Core.Database.Constants.Environment.Database.Name).IsNullOrEmpty() &&
+                 !Environment.GetEnvironmentVariable(Core.Database.Constants.Environment.Database.User).IsNullOrEmpty() &&
+                 !Environment.GetEnvironmentVariable(Core.Database.Constants.Environment.Database.Password).IsNullOrEmpty() &&
+                 Environment.GetEnvironmentVariable(Constants.EnvironmentEnvironmentVariableName) != Environments.Development)
+        {
+            scheme = SessionStorageScheme.RemoteDatabase;
+        }
+        else if (!Environment.GetEnvironmentVariable(Constants.SecretManagerServiceAccountConfigJsonEnvironmentVariableName).IsNullOrEmpty() &&
+                 Environment.GetEnvironmentVariable(Constants.EnvironmentEnvironmentVariableName) != Environments.Development)
+        {
+            scheme = SessionStorageScheme.GoogleCloudSecretManager;
+        }
+        else if (Environment.GetEnvironmentVariable(Constants.EnvironmentEnvironmentVariableName) == Environments.Development)
+        {
+            scheme = SessionStorageScheme.LocalDatabase;
+        }
+        else
+        {
+            throw new EnvironmentVariableException(
+                Constants.EnvironmentEnvironmentVariableName,
+                Core.Database.Constants.Environment.Database.Host,
+                Core.Database.Constants.Environment.Database.Name,
+                Core.Database.Constants.Environment.Database.User,
+                Core.Database.Constants.Environment.Database.Password);
+        }
+
+        return scheme;
+    }
+
     public static IServiceCollection AddDataStorages(this IServiceCollection serviceCollection)
     {
-        if (!Environment.GetEnvironmentVariable(Core.Database.Constants.Environment.Database.Host).IsNullOrEmpty() &&
-            !Environment.GetEnvironmentVariable(Core.Database.Constants.Environment.Database.Name).IsNullOrEmpty() &&
-            !Environment.GetEnvironmentVariable(Core.Database.Constants.Environment.Database.User).IsNullOrEmpty() &&
-            !Environment.GetEnvironmentVariable(Core.Database.Constants.Environment.Database.Password).IsNullOrEmpty() ||
-            Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == Environments.Production ||
-            Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == Environments.Staging)
-            serviceCollection
-                .AddEFModel<UserSession>()
-                .AddEFModel<DatabaseSession>()
-                .AddDatabaseLayer(typeof(Program).Assembly)
-                .AddSingleton<ISessionStorage<SessionData>, DatabaseSessionStorage>();
-        else
-            serviceCollection
-                .AddSingleton<ISessionStorage<SessionData>, LocalSessionStorage>();
+        switch (GetSessionStorageScheme())
+        {
+            case SessionStorageScheme.LocalDatabase:
+                serviceCollection
+                    .AddSingleton<ISessionStorage<SessionData>, LocalSessionStorage>();
+
+                break;
+
+            case SessionStorageScheme.RemoteDatabase:
+                serviceCollection
+                    .AddEFModel<UserSession>()
+                    .AddEFModel<DatabaseSession>()
+                    .AddDatabaseLayer(typeof(Program).Assembly)
+                    .AddSingleton<ISessionStorage<SessionData>, DatabaseSessionStorage>();
+
+                break;
+
+            case SessionStorageScheme.StaticSessionStorage:
+                serviceCollection
+                    .AddHttpContextAccessor()
+                    .AddSingleton<ISessionStorage<SessionData>, StaticConnectionSessionStorage>();
+
+                break;
+
+            case SessionStorageScheme.GoogleCloudSecretManager:
+                serviceCollection
+                    .AddScoped<GoogleCloudSecretManagerService>()
+                    .AddConfigurationTransient(BuildSecretManagerServiceConfiguration())
+                    .AddSingleton<ISessionStorage<SessionData>, GoogleCloudSecretManagerSessionStorage>();
+
+                break;
+        }
 
         return serviceCollection;
     }
 
-    public static IServiceCollection AddConfigurationTransient<TConfiguration>(
-        this IServiceCollection serviceCollection, TConfiguration config)
+    private static GoogleAccountJsonConfiguration BuildSecretManagerServiceConfiguration()
+    {
+        string jsonConfiguration =
+            Environment.GetEnvironmentVariable(Constants.SecretManagerServiceAccountConfigJsonEnvironmentVariableName);
+
+        GoogleAccountJsonConfiguration config = new GoogleAccountJsonConfiguration();
+
+        if (!jsonConfiguration.IsNullOrEmpty())
+        {
+            jsonConfiguration = jsonConfiguration?.Replace("\\n", "\n");
+
+            try
+            {
+                // ReSharper disable once AssignNullToNotNullAttribute - checked above
+                GoogleAccountJsonConfiguration configObject =
+                    Newtonsoft.Json.JsonConvert.DeserializeObject<GoogleAccountJsonConfiguration>(jsonConfiguration);
+
+                // ReSharper disable once PossibleNullReferenceException - checked above
+                if (!configObject.ClientEmail.IsNullOrEmpty() &&
+                    !configObject.PrivateKey.IsNullOrEmpty() &&
+                    !configObject.ProjectId.IsNullOrEmpty())
+                {
+                    config.ClientEmail = configObject.ClientEmail;
+                    config.PrivateKey = configObject.PrivateKey;
+                    config.ProjectId = configObject.ProjectId;
+                }
+            }
+            catch (Exception)
+            {
+                // nothing
+            }
+        }
+
+        return config;
+    }
+
+    public static IServiceCollection AddConfigurationTransient<TConfiguration>(this IServiceCollection serviceCollection, TConfiguration config)
         where TConfiguration : class, new()
     {
         serviceCollection.AddTransient(_ => config);

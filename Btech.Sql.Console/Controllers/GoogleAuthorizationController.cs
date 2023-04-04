@@ -4,6 +4,7 @@ using System.Web;
 using Btech.Sql.Console.Attributes;
 using Btech.Sql.Console.Base;
 using Btech.Sql.Console.Configurations;
+using Btech.Sql.Console.Enums;
 using Btech.Sql.Console.Extensions;
 using Btech.Sql.Console.Identity;
 using Btech.Sql.Console.Interfaces;
@@ -29,11 +30,14 @@ public class GoogleAuthorizationController : UserAuthorizedControllerBase
     public GoogleAuthorizationController(
         ILogger<GoogleAuthorizationController> logger, ISessionStorage<SessionData> sessionStorage,
         IamAuthorizationService iamAuthorizationService, GoogleProjectConfiguration googleProjectConfiguration)
-        : base(logger, sessionStorage)
+        : base(logger)
     {
         this.IamAuthorizationService = iamAuthorizationService;
         this.GoogleProjectConfiguration = googleProjectConfiguration;
+        this.SessionStorage = sessionStorage;
     }
+
+    private ISessionStorage<SessionData> SessionStorage { get; }
 
     private IamAuthorizationService IamAuthorizationService { get; }
 
@@ -191,7 +195,7 @@ public class GoogleAuthorizationController : UserAuthorizedControllerBase
                         }
                         else
                         {
-                            (bool Succeeded, bool Allowed) result =
+                            (bool Succeeded, bool Allowed, UserRole _) result =
                                 await this.IamAuthorizationService.IsAllowedUserAsync(email);
 
                             if (result.Succeeded)
@@ -226,7 +230,7 @@ public class GoogleAuthorizationController : UserAuthorizedControllerBase
                             {
                                 // logged earlier
                                 outResponse.ErrorMessage =
-                                    "'GoogleIAM' service error. Authorization is not complete. Please, try again in a few minutes or call the administrator.";
+                                    "GCP IAM service error. Authorization is not completed. Please, try again in a few minutes or call the administrator.";
                             }
                         }
                     }

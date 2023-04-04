@@ -1,17 +1,18 @@
 import {animate, AnimationTriggerMetadata, style, transition, trigger} from '@angular/animations';
 import {Routes} from '@angular/router';
 import {ErrorComponent} from './components/error/error.component';
-import {QueryConsoleComponent} from './components/queryConsole/queryConsole.component';
 import {ConnectionComponent} from './components/connection/connection.component';
 import {GoogleAuthorizationComponent} from './components/google-authorization/google-authorization.component';
 import {GoogleAuthGuard} from './_auth/google-auth.guard';
 import {SessionAuthGuard} from './_auth/session-auth.guard';
 import {HttpContext, HttpContextToken} from '@angular/common/http';
+import {QueryConsoleComponent} from './components/query-console/query-console.component';
 
 export const ID_TOKEN_KEY = 'sql-console-id-token';
 export const ACCOUNT_PICTURE_URL_KEY = 'sql-console-account-picture-url';
 export const SESSION_TOKEN_KEY = 'sql-console-session-token';
 export const REFRESH_TOKEN_KEY = 'sql-console-refresh-token';
+export const IS_STATIC_CONNECTION_KEY = 'is-static-connection';
 export const JWT_PUBLIC_KEY_KEY = 'sql-console-jwt-public-key';
 
 export const REFRESHED_ID_TOKEN_HEADER_KEY = 'refreshed-id-token';
@@ -29,7 +30,7 @@ export const PATH_GOOGLE_AUTHORIZATION = 'google-auth';
 
 export const IDENTITY_CONTEXT_TOKEN = new HttpContextToken<number>(() => IdentityContextTokenValue.Default);
 
-export function IdentityContext(tokenValue: number = IdentityContextTokenValue.Default) : HttpContext {
+export function IdentityContext(tokenValue: number = IdentityContextTokenValue.Default): HttpContext {
     return new HttpContext().set(IDENTITY_CONTEXT_TOKEN, tokenValue);
 }
 
@@ -95,10 +96,67 @@ export function setPrototype(o: any, prototype: object): void {
 }
 
 export function getHeaders(): { [_: string]: string } {
-  return {
-    'Content-Type': 'application/json'
-  };
+    return {
+        'Content-Type': 'application/json'
+    };
 }
+
+export function formatBytes(size: number): string {
+    const units = ['B', 'KB', 'MB', 'GB'];
+
+    let length = 0;
+
+    while (size >= 1024) {
+        length++;
+        size = size / 1024;
+    }
+
+    return (size.toFixed(size < 10 && size > 0 ? 1 : 0) + ' ' + units[length]);
+}
+
+export function formatMilliSeconds(duration: number): string {
+    const units = ['ms', 's', 'm'];
+
+    let length = 0;
+
+    if (duration > 1000) {
+        duration /= 1000;
+        length++;
+    }
+
+    if (duration > 60) {
+        duration /= 60;
+        length++;
+    }
+
+    return (duration.toFixed(duration < 10 && duration > 0 ? 1 : 0) + units[length]);
+}
+
+export const separators: {
+    name: string,
+    value: string,
+    extension: string,
+    mimeType: string
+}[] = [
+    {
+        name: 'Comma (,)',
+        value: ',',
+        extension: 'csv',
+        mimeType: 'text/csv'
+    },
+    {
+        name: 'Tab (\t)',
+        value: '\t',
+        extension: 'tsv',
+        mimeType: 'text/tab-separated-values'
+    },
+    {
+        name: 'Semicolon (;)',
+        value: ';',
+        extension: 'ssv',
+        mimeType: 'text/csv'
+    }
+];
 
 export class AlertStorage {
     private static readonly _errorMessageMaxLength: number = 180;

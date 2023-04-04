@@ -7,6 +7,7 @@ public class Column
     #region Public Constants
 
     public const string NameJsonPropertyName = "name";
+    public const string DefaultValueJsonPropertyName = "defaultValue";
     public const string TypeJsonPropertyName = "type";
     public const string MaxLengthJsonPropertyName = "maxLength";
     public const string IsPrimaryKeyJsonPropertyName = "isPrimaryKey";
@@ -18,6 +19,9 @@ public class Column
 
     [JsonProperty(NameJsonPropertyName, NullValueHandling = NullValueHandling.Ignore)]
     public string Name { get; set; }
+
+    [JsonProperty(DefaultValueJsonPropertyName, NullValueHandling = NullValueHandling.Ignore)]
+    public string DefaultValue { get; set; }
 
     [JsonProperty(TypeJsonPropertyName, NullValueHandling = NullValueHandling.Ignore)]
     public string Type { get; set; }

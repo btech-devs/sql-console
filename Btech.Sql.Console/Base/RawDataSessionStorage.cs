@@ -8,57 +8,6 @@ namespace Btech.Sql.Console.Base;
 public abstract class RawDataSessionStorage<T> : ISessionStorage<T>
     where T : class
 {
-    private readonly ReaderWriterLockSlim _lock;
-
-    #region Private Methods
-
-    protected RawDataSessionStorage()
-    {
-        this._lock = new();
-    }
-
-    protected async Task<bool> WriteSafetyAsync(Delegate method, object[] args)
-    {
-        // possible exceptions will catch in global exception handler
-        bool result = false;
-
-        if (method is not null)
-        {
-            this._lock.EnterWriteLock();
-
-            dynamic invokeResult = method.DynamicInvoke(args); // returns Task
-
-            if (invokeResult != null)
-                result = await invokeResult;
-
-            this._lock.ExitWriteLock();
-        }
-
-        return result;
-    }
-
-    protected async Task<string> ReadSafetyAsync(Delegate method, object[] args)
-    {
-        // possible exceptions will catch in global exception handler
-        string result = null;
-
-        if (method is not null)
-        {
-            this._lock.EnterReadLock();
-
-            dynamic invokeResult = method.DynamicInvoke(args); // returns Task
-
-            if (invokeResult != null)
-                result = await invokeResult;
-
-            this._lock.ExitReadLock();
-        }
-
-        return result;
-    }
-
-    #endregion Protected Methods
-
     #region Public Methods
 
     /// <summary>
@@ -94,12 +43,7 @@ public abstract class RawDataSessionStorage<T> : ISessionStorage<T>
             throw new UnsupportedContentTypeException($"Type: {typeof(T).Name} is not supported.");
         }
 
-        return await this.WriteSafetyAsync(
-            this.SaveDataAsync,
-            new object[]
-            {
-                new KeyValuePair<string, string>(email, value)
-            });
+        return await this.SaveDataAsync(new KeyValuePair<string, string>(email, value));
     }
 
     /// <summary>
@@ -135,12 +79,7 @@ public abstract class RawDataSessionStorage<T> : ISessionStorage<T>
             throw new UnsupportedContentTypeException($"Type: {typeof(T).Name} is not supported.");
         }
 
-        return await this.WriteSafetyAsync(
-            this.UpdateDataAsync,
-            new object[]
-            {
-                new KeyValuePair<string, string>(email, value)
-            });
+        return await this.UpdateDataAsync(new KeyValuePair<string, string>(email, value));
     }
 
     /// <summary>
@@ -150,7 +89,7 @@ public abstract class RawDataSessionStorage<T> : ISessionStorage<T>
     /// <returns>Returns 'true' if deleting was successful.</returns>
     public async Task<bool> DeleteAsync(string email)
     {
-        return await this.WriteSafetyAsync(this.DeleteDataAsync, new object[] { email });
+        return await this.DeleteDataAsync(email);
     }
 
     /// <summary>
@@ -160,7 +99,7 @@ public abstract class RawDataSessionStorage<T> : ISessionStorage<T>
     /// <returns>Returns serialized object value or 'null'.</returns>
     public async Task<T> GetAsync(string email)
     {
-        string serializedObject = await this.ReadSafetyAsync(this.GetDataAsync, new object[] { email });
+        string serializedObject = await this.GetDataAsync(email);
 
         T deserializedObject = null;
 
@@ -178,12 +117,6 @@ public abstract class RawDataSessionStorage<T> : ISessionStorage<T>
 
         return deserializedObject;
     }
-
-    /// <summary>
-    /// Counting the number of records in the repository.
-    /// </summary>
-    /// <returns>Count of records.</returns>
-    public abstract Task<long> CountAsync();
 
     #endregion Public Methods
 

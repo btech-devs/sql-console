@@ -6,6 +6,7 @@ import {Database} from '../_models/responses/database/database.model';
 import {Response} from '../_models/responses/base/response';
 import {PaginationResponse} from '../_models/responses/base/pagination-response';
 import {IdentityContext, IdentityContextTokenValue} from '../utils';
+import {TableSchema} from '../_models/responses/database/tableSchema.model';
 
 @Injectable()
 export class DatabaseService extends BaseService {
@@ -31,6 +32,15 @@ export class DatabaseService extends BaseService {
         return this
             .requestGet<Response<Database>>(
                 `/api/databases/${databaseName}`,
+                {},
+                null,
+                IdentityContext(IdentityContextTokenValue.Full));
+    }
+
+    getTableSchema(databaseName: string, tableName: string): Observable<Response<TableSchema>> {
+        return this
+            .requestGet<Response<TableSchema>>(
+                `/api/databases/${databaseName}/${tableName}`,
                 {},
                 null,
                 IdentityContext(IdentityContextTokenValue.Full));

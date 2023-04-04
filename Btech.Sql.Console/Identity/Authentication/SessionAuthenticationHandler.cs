@@ -23,12 +23,13 @@ public class SessionAuthenticationHandler : AuthenticationHandlerBase<Authentica
 
     private JwtProvider JwtProvider { get; }
 
-    private AuthenticationTicket CreateAuthenticationTicket(string instanceType, string connectionString)
+    private AuthenticationTicket CreateAuthenticationTicket(string instanceType, string connectionString, string host)
     {
         Claim[] claims =
         {
             new(Constants.Identity.ClaimTypes.ConnectionString, connectionString),
-            new(Constants.Identity.ClaimTypes.InstanceType, instanceType)
+            new(Constants.Identity.ClaimTypes.InstanceType, instanceType),
+            new(Constants.Identity.ClaimTypes.Host, host)
         };
 
         ClaimsIdentity identity = new(claims, this.Scheme.Name);
@@ -52,16 +53,14 @@ public class SessionAuthenticationHandler : AuthenticationHandlerBase<Authentica
                 this.GetRequestHeader(Constants.Identity.HeaderNames.Request.IdTokenHeaderName),
                 Constants.Identity.ClaimTypes.Email, out string email);
 
-            SessionData sessionData = await this.SessionStorage.GetAsync(email);
-
-            if (sessionData is not null)
+            if (this.Context.Items[Constants.Identity.SessionDataItemName] is SessionData sessionData)
             {
                 DbSession dbSession = sessionData.GetDbSession(sessionToken);
 
                 if (dbSession is null)
                 {
                     this.AddErrorHeader();
-                    this.Logger.LogError("Provided session key is not exists.");
+                    this.Logger.LogError("Provided session key does not exist.");
                 }
                 else
                 {
@@ -72,12 +71,19 @@ public class SessionAuthenticationHandler : AuthenticationHandlerBase<Authentica
                         if (this.JwtProvider.IsValidToken(sessionToken, out bool isExpiredToken))
                         {
                             this.TryGetTokenClaim(
-                                sessionToken, Constants.Identity.ClaimTypes.InstanceType, out string requestTokenInstanceType);
+                                sessionToken,
+                                Constants.Identity.ClaimTypes.InstanceType,
+                                out string requestTokenInstanceType);
 
                             if (!isExpiredToken)
                             {
+                                this.TryGetTokenClaim(
+                                    sessionToken, Constants.Identity.ClaimTypes.Host,
+                                    out string requestTokenHost);
+
                                 authenticateResult = AuthenticateResult
-                                    .Success(this.CreateAuthenticationTicket(requestTokenInstanceType, connectionString));
+                                    .Success(this.CreateAuthenticationTicket(
+                                        requestTokenInstanceType, connectionString, requestTokenHost));
 
                                 this.Logger.LogDebug("Session authentication succeeded.");
                             }
@@ -117,7 +123,9 @@ public class SessionAuthenticationHandler : AuthenticationHandlerBase<Authentica
                                                     this.TryGetTokenClaim(sessionToken, Constants.Identity.ClaimTypes.InstanceType, out string instanceType);
 
                                                     authenticateResult = AuthenticateResult
-                                                        .Success(this.CreateAuthenticationTicket(instanceType, connectionString));
+                                                        .Success(this.CreateAuthenticationTicket(instanceType, connectionString, requestTokenHost));
+
+                                                    this.Context.Items[Constants.Identity.SessionDataItemName] = sessionData;
 
                                                     this.AddResponseHeader(Constants.Identity.HeaderNames.Response.RefreshedSessionTokenHeaderName, newSessionToken);
                                                     this.AddResponseHeader(Constants.Identity.HeaderNames.Response.RefreshedRefreshTokenHeaderName, newRefreshToken);

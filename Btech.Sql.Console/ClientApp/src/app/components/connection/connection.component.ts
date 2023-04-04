@@ -5,6 +5,7 @@ import {ActivatedRoute, NavigationExtras, Router} from '@angular/router';
 import {BaseComponent} from '../../_base/base.component';
 import {
     AlertStorage,
+    IS_STATIC_CONNECTION_KEY,
     JWT_PUBLIC_KEY_KEY,
     PATH_CONSOLE,
     PATH_ERROR,
@@ -25,7 +26,6 @@ import {MetadataService} from '../../_services/metadata.service';
     styleUrls: ['./connection.component.less']
 })
 export class ConnectionComponent extends BaseComponent {
-
     readonly hostMaxLength = 255;
 
     readonly portMaxLength = 5;
@@ -47,6 +47,16 @@ export class ConnectionComponent extends BaseComponent {
     ];
 
     private _returnUrl: string;
+
+    private _error?: string = undefined;
+    get error(): string | undefined {
+        return this._error;
+    }
+
+    private _isStaticConnectionLoading: boolean = true;
+    get isStaticConnectionLoading(): boolean {
+        return this._isStaticConnectionLoading;
+    }
 
     private readonly _connectionForm: FormGroup;
     get connectionForm(): FormGroup {
@@ -92,11 +102,36 @@ export class ConnectionComponent extends BaseComponent {
 
         await this.checkJwtPublicKey();
 
-        if (SessionStorageService.get(SESSION_TOKEN_KEY) && SessionStorageService.get(REFRESH_TOKEN_KEY)) {
-            await this._router.navigate([PATH_CONSOLE]);
-        } else {
-            SessionStorageService.clear();
-        }
+        this._error = undefined;
+        this._isStaticConnectionLoading = true;
+
+        this._connectionService.getStaticConnection()
+            .subscribe({
+                next: response => {
+
+                    if (response.errorMessage) {
+                        this._error = response.errorMessage;
+                    } else {
+                        if (response?.data?.sessionToken?.length) {
+                            SessionStorageService.set(SESSION_TOKEN_KEY, response.data.sessionToken);
+                            SessionStorageService.set(REFRESH_TOKEN_KEY, response.data.refreshToken);
+                            SessionStorageService.set(IS_STATIC_CONNECTION_KEY, true);
+                        }
+
+                        if (SessionStorageService.get(SESSION_TOKEN_KEY) && SessionStorageService.get(REFRESH_TOKEN_KEY)) {
+                            this._router.navigate([PATH_CONSOLE]);
+                        } else {
+                            SessionStorageService.clear();
+                        }
+                    }
+
+                    this._isStaticConnectionLoading = false;
+                },
+                error: (error: Error) => {
+                    this._error = error.message;
+                    this._isStaticConnectionLoading = false;
+                }
+            });
     }
 
     onConnect() {
@@ -240,19 +275,19 @@ export class ConnectionComponent extends BaseComponent {
         let result: boolean = false;
         let errorMessageNavigationExtras: NavigationExtras | undefined = undefined;
 
-        if(this.jwtPublicKeyLoaded) {
+        if (this.jwtPublicKeyLoaded) {
             result = true;
         } else {
             let response = await this.getJwtPublicKey();
 
-            if(response.errorMessage != undefined) {
+            if (response.errorMessage != undefined) {
                 errorMessageNavigationExtras = {
                     queryParams: {
                         message: response.errorMessage,
                         tryAgainButton: true
                     }
                 };
-            } else if(response.errorMessages != undefined) {
+            } else if (response.errorMessages != undefined) {
                 let errorMessage: string = '';
 
                 response.errorMessages.forEach((error) => {
@@ -271,7 +306,7 @@ export class ConnectionComponent extends BaseComponent {
                 await this._router.navigate([PATH_ERROR], errorMessageNavigationExtras);
             } else {
 
-                if(response.data != undefined) {
+                if (response.data != undefined) {
                     LocalStorageService.set(JWT_PUBLIC_KEY_KEY, response.data.replace(/\\n/gm, '\n'));
                     result = true;
                 } else {

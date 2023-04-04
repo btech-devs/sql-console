@@ -7,7 +7,6 @@ import {AppComponent} from './app.component';
 import {getRoutes} from './utils';
 import {ErrorComponent} from './components/error/error.component';
 import {CopyClick} from './directives/copyClick.directive';
-import {QueryConsoleComponent} from './components/queryConsole/queryConsole.component';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {ConnectionComponent} from './components/connection/connection.component';
 import {ConnectionService} from './_services/connection.service';
@@ -20,17 +19,27 @@ import {GoogleAuthorizationComponent} from './components/google-authorization/go
 import {GoogleAuthService} from './_services/google-auth.service';
 import {SessionAuthGuard} from './_auth/session-auth.guard';
 import {GoogleAuthGuard} from './_auth/google-auth.guard';
-import {DsvExporterComponent} from './components/queryConsole/dataExporters/dsvExporter/dsvExporter.component';
-import {ConfirmModalComponent} from './components/confirmModal/confirmModal.component';
 import {MetadataService} from './_services/metadata.service';
+import {QueryConsoleComponent} from './components/query-console/query-console.component';
+import {DsvImporterComponent} from './components/query-console/data-importers/dsv-importer/dsv-importer.component';
+import {DsvExporterComponent} from './components/query-console/data-exporters/dsv-exporter/dsv-exporter.component';
+import {SqlImporterComponent} from './components/query-console/data-importers/sql-importer/sql-importer.component';
+import {FormatBytesPipe} from './_pipes/format-bytes.pipe';
+import {FormatMillisecondsPipe} from './_pipes/format-milliseconds.pipe';
+import {ConfirmModalComponent} from './components/confirm-modal/confirm-modal.component';
+import {ConfirmModalService} from './components/confirm-modal/confirm-modal.service';
 
 @NgModule({
     declarations: [
         AppComponent,
         QueryConsoleComponent,
+        DsvImporterComponent,
         ErrorComponent,
         CopyClick,
         DsvExporterComponent,
+        SqlImporterComponent,
+        FormatBytesPipe,
+        FormatMillisecondsPipe,
         ConfirmModalComponent,
         ConnectionComponent,
         ResizableRow,
@@ -53,6 +62,7 @@ import {MetadataService} from './_services/metadata.service';
         GoogleAuthGuard,
         QueryService,
         DatabaseService,
+        ConfirmModalService,
         GoogleAuthService,
         MetadataService,
         {provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true}

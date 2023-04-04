@@ -4,11 +4,15 @@ using System.Text;
 using System.Data.Common;
 using Btech.Sql.Console.Attributes;
 using Btech.Sql.Console.Base;
+using Btech.Sql.Console.Factories;
+using Btech.Sql.Console.Enums;
+using Btech.Sql.Console.Extensions;
 using Btech.Sql.Console.Interfaces;
-using Btech.Sql.Console.Models;
 using Btech.Sql.Console.Models.Requests.Query;
 using Btech.Sql.Console.Models.Responses.Base;
+using Btech.Sql.Console.Models.Responses.Connector;
 using Btech.Sql.Console.Models.Responses.Query;
+using Btech.Sql.Console.Utils;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,168 +23,335 @@ namespace Btech.Sql.Console.Controllers;
 public class QueryController : SessionRelatedControllerBase
 {
     public QueryController(
-        ILogger<QueryController> logger, IConnectorFactory connectorFactory, ISessionStorage<SessionData> sessionStorage)
-        : base(logger, sessionStorage)
+        ILogger<QueryController> logger, IConnectorFactory connectorFactory)
+        : base(logger)
     {
         this.ConnectorFactory = connectorFactory;
     }
 
     private IConnectorFactory ConnectorFactory { get; }
 
-    [HttpPost("execute")]
+    [HttpPost("execute/{database}")]
     [ValidateModel]
-    public async Task<Response<Query>> ExecuteAsync([FromBody] QueryExecuteRequest queryExecuteRequest)
+    public async Task<Response<Query>> ExecuteAsync([FromRoute] string database, [FromBody] QueryExecuteRequest queryExecuteRequest)
     {
         Response<Query> queryResponse = new();
 
-        await using (ConnectorBase connector = this.ConnectorFactory
-                         .Create(this.GetInstanceType(), this.GetConnectionString(queryExecuteRequest.DatabaseName)))
+        if (!PermissionRuleFactory
+                .IsAllowedDatabase(database, this.GetUserRole(), this.GetDatabaseHost()))
         {
-            Query data = new Query();
-
-            await connector.OpenConnectionAsync();
-
-            DataTable dataTable = new DataTable();
-            ReadOnlyCollection<DbColumn> columnsSchema;
-
-            await using (DbCommand query = connector.CreateCommand(queryExecuteRequest.Sql))
+            queryResponse.ErrorMessage = "You do not have permission for this request.";
+        }
+        else
+        {
+            await using (ConnectorBase connector = this.ConnectorFactory
+                             .Create(this.GetInstanceType(), this.GetConnectionString(database)))
             {
-                await using (DbDataReader reader = await query.ExecuteReaderAsync())
+                Query data = new Query();
+
+                await connector.OpenConnectionAsync();
+
+                DataTable dataTable = new DataTable();
+                ReadOnlyCollection<DbColumn> columnsSchema;
+
+                await using (DbCommand query = connector.CreateCommand(queryExecuteRequest.Sql))
                 {
-                    columnsSchema = await reader.GetColumnSchemaAsync();
                     DateTime start = DateTime.UtcNow;
-                    dataTable.Load(reader);
-                    DateTime end = DateTime.UtcNow;
-                    data.RecordsAffected = reader.RecordsAffected;
-                    data.ElapsedTimeMs = Math.Truncate((decimal) Math.Round((end - start).TotalMilliseconds, 3) * 1000m) / 1000m;
-                }
-            }
 
-            if (columnsSchema.Any())
-            {
-                data.Table = new()
-                {
-                    Columns = new(),
-                    Rows = new()
-                };
-
-                this.LogDebug("Start generating response.");
-
-                foreach (DbColumn dataTableColumn in columnsSchema)
-                {
-                    data.Table.Columns.Add(
-                        new Column
-                        {
-                            Name = dataTableColumn.ColumnName,
-                            Type = dataTableColumn.DataTypeName
-                        });
+                    await using (DbDataReader reader = await query.ExecuteReaderAsync())
+                    {
+                        columnsSchema = await reader.GetColumnSchemaAsync();
+                        dataTable.Load(reader);
+                        DateTime end = DateTime.UtcNow;
+                        data.RecordsAffected = reader.RecordsAffected;
+                        data.ElapsedTimeMs = (end - start).ToElapsedTimeMs();
+                    }
                 }
 
-                foreach (DataRow dataTableRow in dataTable.Rows)
-                    data.Table.Rows.Add(dataTableRow.ItemArray.ToList());
-            }
+                if (columnsSchema.Any())
+                {
+                    data.Table = new()
+                    {
+                        Columns = new(),
+                        Rows = new()
+                    };
 
-            queryResponse.Data = data;
+                    this.LogDebug("Start generating response.");
+
+                    foreach (DbColumn dataTableColumn in columnsSchema)
+                    {
+                        data.Table.Columns.Add(
+                            new Column
+                            {
+                                Name = dataTableColumn.ColumnName,
+                                Type = dataTableColumn.DataTypeName
+                            });
+                    }
+
+                    foreach (DataRow dataTableRow in dataTable.Rows)
+                        data.Table.Rows.Add(dataTableRow.ItemArray.ToList());
+                }
+
+                queryResponse.Data = data;
+            }
         }
 
         return queryResponse;
     }
 
-    [HttpPost("execute/dsv")]
+    [HttpPost("execute/{database}/dsv")]
     [ValidateModel]
-    public async Task ExecuteDsvAsync([FromBody] QueryExecuteDsvRequest queryExecuteDsvRequest)
+    public async Task ExecuteDsvAsync([FromRoute] string database, [FromBody] QueryExecuteDsvRequest queryExecuteDsvRequest)
     {
-        // TODO: catch expected exceptions
-
-        this.HttpContext.Features.Get<IHttpResponseBodyFeature>()!.DisableBuffering();
-
-        await using (ConnectorBase connector = this.ConnectorFactory
-                         .Create(this.GetInstanceType(), this.GetConnectionString(queryExecuteDsvRequest.DatabaseName)))
+        try
         {
-            await connector.OpenConnectionAsync();
+            this.HttpContext.Features.Get<IHttpResponseBodyFeature>()!.DisableBuffering();
 
-            await using (DbCommand query = connector.CreateCommand(queryExecuteDsvRequest.Sql))
+            if (!PermissionRuleFactory
+                    .IsAllowedDatabase(database, this.GetUserRole(), this.GetDatabaseHost()))
             {
-                await using (DbDataReader reader = await query.ExecuteReaderAsync())
+                this.Response.StatusCode = 403;
+            }
+            else
+            {
+                this.HttpContext.Features.Get<IHttpResponseBodyFeature>()!.DisableBuffering();
+
+                await using (ConnectorBase connector = this.ConnectorFactory
+                                 .Create(this.GetInstanceType(), this.GetConnectionString(database)))
                 {
-                    this.Response.ContentType = queryExecuteDsvRequest.Separator switch
+                    await connector.OpenConnectionAsync();
+
+                    await using (DbCommand query = connector.CreateCommand(queryExecuteDsvRequest.Sql))
                     {
-                        ',' => "text/csv",
-                        '\t' => "text/tab-separated-values",
-                        ';' => "text/csv",
-                        _ => "text/plain"
-                    };
-
-                    bool isFirstRow = true;
-
-                    while (await reader.ReadAsync())
-                    {
-                        List<string> columnList = new List<string>();
-                        List<string> headerList = new List<string>();
-
-                        for (int columnIndex = 0; columnIndex < reader.FieldCount; ++columnIndex)
+                        await using (DbDataReader reader = await query.ExecuteReaderAsync())
                         {
-                            string value;
-
-                            if (isFirstRow && queryExecuteDsvRequest.IncludeHeader)
+                            this.Response.ContentType = queryExecuteDsvRequest.Separator switch
                             {
-                                value = reader.GetName(columnIndex);
+                                ',' => "text/csv",
+                                '\t' => "text/tab-separated-values",
+                                ';' => "text/csv",
+                                _ => "text/plain"
+                            };
 
-                                if (queryExecuteDsvRequest.AddQuotes)
-                                    value = $"\"{value}\"";
+                            bool isFirstRow = true;
 
-                                headerList.Add(value);
-                            }
-
-                            Type type = reader.GetFieldType(columnIndex);
-
-                            if (type == typeof(byte[]))
+                            while (await reader.ReadAsync())
                             {
-                                value = Convert.ToBase64String((byte[]) reader[columnIndex]);
+                                List<string> columnList = new List<string>();
+                                List<string> headerList = new List<string>();
 
-                                // Check for zipped content
-                                if (!value.StartsWith("H4sI"))
+                                for (int columnIndex = 0; columnIndex < reader.FieldCount; ++columnIndex)
                                 {
-                                    value = Encoding.UTF8.GetString((byte[]) reader[columnIndex]);
+                                    string value;
+
+                                    if (isFirstRow && queryExecuteDsvRequest.IncludeHeader)
+                                    {
+                                        value = reader.GetName(columnIndex);
+
+                                        if (queryExecuteDsvRequest.AddQuotes)
+                                            value = $"\"{value}\"";
+
+                                        headerList.Add(value);
+                                    }
+
+                                    Type type = reader.GetFieldType(columnIndex);
+
+                                    if (type == typeof(byte[]))
+                                    {
+                                        value = Convert.ToBase64String((byte[]) reader[columnIndex]);
+
+                                        // Check for zipped content
+                                        if (!value.StartsWith("H4sI"))
+                                        {
+                                            value = Encoding.UTF8.GetString((byte[]) reader[columnIndex]);
+                                        }
+                                    }
+                                    else
+                                        value = reader[columnIndex].ToString();
+
+                                    value ??= queryExecuteDsvRequest.NullOutput;
+
+                                    columnList.Add(value);
                                 }
 
-                                columnList.Add(value);
+                                if (queryExecuteDsvRequest.AddQuotes)
+                                    columnList = columnList.Select(value => $"\"{value}\"").ToList();
+
+                                if (isFirstRow && queryExecuteDsvRequest.IncludeHeader)
+                                {
+                                    await this.Response.BodyWriter
+                                        .WriteAsync(Encoding.UTF8.GetBytes(string.Join(queryExecuteDsvRequest.Separator, headerList)));
+
+                                    await this.Response.BodyWriter
+                                        .WriteAsync(Encoding.UTF8.GetBytes(queryExecuteDsvRequest.NewLine));
+                                }
+
+                                if (!isFirstRow)
+                                    await this.Response.BodyWriter
+                                        .WriteAsync(Encoding.UTF8.GetBytes(queryExecuteDsvRequest.NewLine));
+
+                                isFirstRow = false;
+
+                                await this.Response.BodyWriter
+                                    .WriteAsync(Encoding.UTF8.GetBytes(string.Join(queryExecuteDsvRequest.Separator, columnList)));
+
+                                await this.Response.BodyWriter.FlushAsync();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch (DbException exception)
+        {
+            this.LogDebug(exception.Message, exception);
+
+            this.Response.StatusCode = 400;
+
+            await this.Response.WriteAsJsonAsync(
+                new Response
+                {
+                    ErrorMessage = exception.Message
+                });
+        }
+
+        this.LogDebug("Close connection.");
+    }
+
+    [HttpPost("import/{database}/sql"), DisableRequestSizeLimit]
+    public async Task<Response<Query>> ImportSqlAsync(
+        [FromRoute] string database,
+        [FromForm] IFormFile file)
+    {
+        const short timeLimit = 180;
+
+        Response<Query> response = new();
+
+        string fileExtension = file.FileName.Split('.').Last();
+
+        string[] allowedExtensions = { "sql", "pgsql" };
+
+        if (!allowedExtensions.Contains(fileExtension))
+        {
+            this.Response.StatusCode = 400;
+        }
+        else
+        {
+            await using (Stream stream = file.OpenReadStream())
+            {
+                using (StreamReader reader = new StreamReader(stream))
+                {
+                    string rawQuery = await reader.ReadToEndAsync();
+
+                    InstanceType instanceType = this.GetInstanceType();
+                    string connectionString = this.GetConnectionString(database);
+                    connectionString = ConnectionStringBuilder.SetupTimeout(instanceType, connectionString, timeLimit);
+                    connectionString = ConnectionStringBuilder.SetupCommandTimeout(instanceType, connectionString, timeLimit);
+
+                    await using (ConnectorBase connector = this.ConnectorFactory
+                                     .Create(this.GetInstanceType(), connectionString))
+                    {
+                        Query data = new Query();
+
+                        await connector.OpenConnectionAsync();
+
+                        try
+                        {
+                            await using (DbCommand query = connector.CreateCommand(rawQuery))
+                            {
+                                DateTime start = DateTime.UtcNow;
+                                data.RecordsAffected = await query.ExecuteNonQueryAsync();
+                                DateTime end = DateTime.UtcNow;
+                                data.ElapsedTimeMs = (end - start).ToElapsedTimeMs();
+                            }
+                        }
+                        catch (Exception exception)
+                        {
+                            if (exception.InnerException?.GetType() == typeof(TimeoutException))
+                            {
+                                response.ErrorMessage = $"The query has exceeded the time limit of {timeLimit}s. Try to chunk your query.";
                             }
                             else
-                                value = reader[columnIndex].ToString();
-
-                            value ??= queryExecuteDsvRequest.NullOutput;
-
-                            columnList.Add(value);
+                            {
+                                throw;
+                            }
                         }
 
-                        if (queryExecuteDsvRequest.AddQuotes)
-                            columnList = columnList.Select(value => $"\"{value}\"").ToList();
-
-                        if (isFirstRow && queryExecuteDsvRequest.IncludeHeader)
-                        {
-                            await this.Response.BodyWriter
-                                .WriteAsync(Encoding.UTF8.GetBytes(string.Join(queryExecuteDsvRequest.Separator, headerList)));
-
-                            await this.Response.BodyWriter
-                                .WriteAsync(Encoding.UTF8.GetBytes(queryExecuteDsvRequest.NewLine));
-                        }
-
-                        if (!isFirstRow)
-                            await this.Response.BodyWriter
-                                .WriteAsync(Encoding.UTF8.GetBytes(queryExecuteDsvRequest.NewLine));
-
-                        isFirstRow = false;
-
-                        await this.Response.BodyWriter
-                            .WriteAsync(Encoding.UTF8.GetBytes(string.Join(queryExecuteDsvRequest.Separator, columnList)));
-
-                        await this.Response.BodyWriter.FlushAsync();
+                        if (response.ErrorMessage.IsNullOrEmpty())
+                            response.Data = data;
                     }
                 }
             }
         }
 
-        this.LogDebug("Close connection.");
+        return response;
+    }
+
+    [HttpPost("import/{database}/dsv/{tableName}"), DisableRequestSizeLimit]
+    public async Task<Response<Query>> ImportDsvAsync(
+        [FromRoute] string database,
+        [FromRoute] string tableName,
+        [FromForm] QueryImportDsvRequest request)
+    {
+        Response<Query> response = new();
+
+        const short timeLimit = 180;
+
+        string fileExtension = request.File.FileName.Split('.').Last();
+
+        string[] allowedExtensions = { "csv", "dsv", "tsv" };
+
+        if (!allowedExtensions.Contains(fileExtension))
+        {
+            this.Response.StatusCode = 400;
+        }
+        else if (request.File.Length == 0)
+        {
+            this.Response.StatusCode = 400;
+            response.ErrorMessage = $"'{request.File.FileName}' is empty.";
+        }
+        else
+        {
+            InstanceType instanceType = this.GetInstanceType();
+            string connectionString = this.GetConnectionString(database);
+            connectionString = ConnectionStringBuilder.SetupTimeout(instanceType, connectionString, timeLimit);
+            connectionString = ConnectionStringBuilder.SetupCommandTimeout(instanceType, connectionString, timeLimit);
+
+            await using (ConnectorBase connector = this.ConnectorFactory
+                             .Create(this.GetInstanceType(), connectionString))
+            {
+                await connector.OpenConnectionAsync();
+
+                DateTime start = DateTime.UtcNow;
+
+                ImportResult importResult = await connector
+                    .ExecuteDsvImportAsync(
+                        file: request.File,
+                        table: tableName,
+                        columnSeparator: request.Separator,
+                        chunkSize: request.ChunkSize,
+                        doubleQuotes: request.DoubleQuotes,
+                        rollbackOnError: request.RollbackOnError,
+                        rowsToSkip: request.RowsToSkip);
+
+                DateTime end = DateTime.UtcNow;
+
+                if (importResult.RecordsAffected.HasValue)
+                {
+                    response.Data = new()
+                    {
+                        RecordsAffected = importResult.RecordsAffected,
+                        ElapsedTimeMs = (end - start).ToElapsedTimeMs()
+                    };
+                }
+
+                if (!importResult.ErrorMessage.IsNullOrEmpty())
+                {
+                    response.ErrorMessage = importResult.ErrorMessage;
+                }
+            }
+        }
+
+        return response;
     }
 }

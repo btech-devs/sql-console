@@ -2,6 +2,7 @@ import {QueryColumn} from '../query/queryColumn.model';
 
 export class Column {
     private _name?: string;
+    private _defaultValue?: string;
     private _type?: string;
     private _maxLength?: number;
     private _isPrimaryKey?: boolean;
@@ -9,6 +10,10 @@ export class Column {
 
     get name(): string | undefined {
         return this._name;
+    }
+
+    get defaultValue(): string | undefined{
+        return this._defaultValue;
     }
 
     get type(): string | undefined {
@@ -29,6 +34,10 @@ export class Column {
 
     set name(value: string | undefined) {
         this._name = value;
+    }
+
+    set defaultValue(value: string | undefined) {
+        this._defaultValue = value;
     }
 
     set type(value: string | undefined) {

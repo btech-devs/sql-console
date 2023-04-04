@@ -62,7 +62,8 @@ public sealed class PolicyEvaluator : IPolicyEvaluator
             ClaimsPrincipal newPrincipal = null;
             DateTimeOffset? minExpiresUtc = null;
 
-            foreach (string scheme in policy.AuthenticationSchemes)
+            foreach (string scheme in policy.AuthenticationSchemes
+                         .OrderBy(value => value))
             {
                 result = await context.AuthenticateAsync(scheme);
 

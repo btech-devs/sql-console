@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using Btech.Sql.Console.Configurations;
+using Btech.Sql.Console.Exceptions;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Btech.Sql.Console.Providers;
@@ -20,26 +21,28 @@ public class CryptographyProvider
         return inKey.Replace("\\n", "\n");
     }
 
-    private void ImportPrivateKey()
+    private void ImportKey(string key, string environmentVariableName)
     {
-        this.Algorithm.ImportFromPem(this.PrepareKey(this.Configuration.PrivateKey));
-    }
-
-    private void ImportPublicKey()
-    {
-        this.Algorithm.ImportFromPem(this.PrepareKey(this.Configuration.PublicKey));
+        try
+        {
+            this.Algorithm.ImportFromPem(this.PrepareKey(key));
+        }
+        catch (Exception exception)
+        {
+            throw new EnvironmentVariableException(exception, environmentVariableName);
+        }
     }
 
     public SigningCredentials GetSigningCredentials()
     {
-        this.ImportPrivateKey();
+        this.ImportKey(this.Configuration.PrivateKey, Constants.CryptographyPrivateKeyEnvironmentVariableName);
 
         return new SigningCredentials(new RsaSecurityKey(this.Algorithm), SecurityAlgorithms.RsaSha512);
     }
 
     public SecurityKey GetPublicSecurityKey()
     {
-        this.ImportPublicKey();
+        this.ImportKey(this.Configuration.PublicKey, Constants.CryptographyPublicKeyEnvironmentVariableName);
 
         return new RsaSecurityKey(this.Algorithm);
     }

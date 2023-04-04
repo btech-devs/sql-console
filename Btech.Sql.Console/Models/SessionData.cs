@@ -23,6 +23,10 @@ public class SessionData
         this.RefreshToken = refreshToken;
     }
 
+    public SessionData()
+    {
+    }
+
     /// <summary>
     /// Get DbSession.
     /// </summary>

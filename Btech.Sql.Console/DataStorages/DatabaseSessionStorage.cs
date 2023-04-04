@@ -162,13 +162,5 @@ public class DatabaseSessionStorage : ISessionStorage<SessionData>
         return sessionData;
     }
 
-    public async Task<long> CountAsync()
-    {
-        await using (IUnitOfWork unitOfWork = this.UnitOfWorkFactory.GetUnitOfWork())
-        {
-            return await unitOfWork.GetRepository<UserSession>().CountAsync();
-        }
-    }
-
     #endregion Public Methods
 }

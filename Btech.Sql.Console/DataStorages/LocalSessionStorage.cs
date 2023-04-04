@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Btech.Sql.Console.Base;
 using Btech.Sql.Console.Models;
 
@@ -13,25 +14,20 @@ public class LocalSessionStorage : RawDataSessionStorage<SessionData>
         this._dictionary = new();
     }
 
-    private readonly Dictionary<string, string> _dictionary;
-
-    public override Task<long> CountAsync() => Task.FromResult<long>(this._dictionary.Count);
+    private readonly ConcurrentDictionary<string, string> _dictionary;
 
     protected override Task<bool> SaveDataAsync(KeyValuePair<string, string> keyValue)
     {
-        this._dictionary.Add(keyValue.Key, keyValue.Value);
-
-        return Task.FromResult(true);
+        return Task.FromResult(this._dictionary.TryAdd(keyValue.Key, keyValue.Value));
     }
 
     protected override Task<bool> UpdateDataAsync(KeyValuePair<string, string> keyValue)
     {
         bool result = false;
 
-        if (this._dictionary.TryGetValue(keyValue.Key, out string _))
+        if (this._dictionary.TryGetValue(keyValue.Key, out string actualValue))
         {
-            this._dictionary[keyValue.Key] = keyValue.Value;
-            result = true;
+            result = this._dictionary.TryUpdate(keyValue.Key, keyValue.Value, actualValue);
         }
 
         return Task.FromResult(result);
@@ -39,9 +35,7 @@ public class LocalSessionStorage : RawDataSessionStorage<SessionData>
 
     protected override Task<bool> DeleteDataAsync(string key)
     {
-        this._dictionary.Remove(key);
-
-        return Task.FromResult(true);
+        return Task.FromResult(this._dictionary.TryRemove(key, out string _));
     }
 
     protected override Task<string> GetDataAsync(string key)

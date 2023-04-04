@@ -1,10 +1,10 @@
-.CodeMirror-lint-tooltip{
+.CodeMirror-lint-tooltip {
   background: #ffffff;
   border: 1px solid #efefef;
   border-radius: 4px;
 }
 
-.codeMirror__gutter-query-button{
+.codeMirror__gutter-query-button {
   background: none;
   padding: 0;
   border: none;
@@ -13,12 +13,17 @@
   font-size: 1.2em;
   line-height: 1;
   margin-left: -5px;
-  &:hover{
+
+  &:hover {
     color: #00c96f;
   }
 }
 
-.CodeMirror-linenumber{
+.CodeMirror-lint-marker.CodeMirror-lint-marker-error, .CodeMirror-lint-marker.CodeMirror-lint-marker-warning {
+  left: -3px;
+}
+
+.CodeMirror-linenumber {
   text-align: center !important;
   padding: 0 !important;
 }

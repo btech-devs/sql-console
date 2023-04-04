@@ -4,12 +4,21 @@ public static class Constants
 {
     public static class Identity
     {
-        public const string GoogleIdentityAuthenticationSchemeName = "GoogleIdentityScheme";
-        public const string SessionAuthenticationSchemeName = "SessionScheme";
+        public const string GoogleIdentityAuthenticationSchemeName = "1GoogleIdentityScheme";
+        public const string SessionAuthenticationSchemeName = "2SessionScheme";
 
         public const string FullAuthenticationPolicyName = "FullPolicy";
         public const string GoogleIdentityAuthorizationPolicyName = "GoogleIdentity";
         public const string SessionAuthorizationPolicyName = "Session";
+
+        public const string SecretManagerSessionDataVersionId = "1";
+
+        public const string SessionDataItemName = "SessionData";
+
+        public static class CookieNames
+        {
+            public const string RefreshTokenCookieName = "google_refresh_token";
+        }
 
         public static class HeaderNames
         {
@@ -38,6 +47,25 @@ public static class Constants
             public const string Picture = "picture";
             public const string ConnectionString = "connection_string";
             public const string Expiration = "exp";
+            public const string Role = "role";
+        }
+
+        public static class IamServiceRoleNames
+        {
+            public const string CloudSqlAdmin = "roles/cloudsql.admin";
+            public const string Owner = "roles/owner";
+            public const string CloudSqlEditor = "roles/cloudsql.editor";
+            public const string Editor = "roles/editor";
+            public const string CloudSqlClient = "roles/cloudsql.client";
+        }
+
+        public static class StaticConnectionEnvironmentVariables
+        {
+            public const string Host = "STATIC_HOST";
+            public const string Port = "STATIC_PORT";
+            public const string User = "STATIC_USER";
+            public const string Password = "STATIC_PASSWORD";
+            public const string InstanceType = "STATIC_INSTANCE_TYPE";
         }
     }
 
@@ -47,10 +75,11 @@ public static class Constants
     public const string IamServiceAccountConfigJsonEnvironmentVariableName = "IAM_SERVICE_ACCOUNT_CONFIG_JSON";
     public const string IamServiceAccountEmailEnvironmentVariableName = "IAM_SERVICE_ACCOUNT_EMAIL";
     public const string IamServiceAccountPrivateKeyEnvironmentVariableName = "IAM_SERVICE_ACCOUNT_PRIVATE_KEY";
-    public const string IamServiceGrantedRolesEnvironmentVariableName = "IAM_SERVICE_GRANTED_ROLES";
-    public const string IamServiceGrantedRolesEnvironmentVariableValue = "cloudsql.admin,cloudsql.client,cloudsql.editor";
     public const string CryptographyPublicKeyEnvironmentVariableName = "CRYPTOGRAPHY_PUBLIC_KEY";
     public const string CryptographyPrivateKeyEnvironmentVariableName = "CRYPTOGRAPHY_PRIVATE_KEY";
+    public const string EnvironmentEnvironmentVariableName = "ASPNETCORE_ENVIRONMENT";
+    public const string IamServiceGrantedRolesEnvironmentVariableName = "IAM_SERVICE_GRANTED_ROLES";
+    public const string SecretManagerServiceAccountConfigJsonEnvironmentVariableName = "SECRET_MANAGER_SERVICE_ACCOUNT_CONFIG_JSON";
 
     public const ushort HostMaxLength = 263;
     public const ushort PortMinValue = 1;

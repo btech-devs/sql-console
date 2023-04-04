@@ -9,6 +9,4 @@ public interface ISessionStorage<TEntity> where TEntity : class
     Task<bool> DeleteAsync(string email);
 
     Task<TEntity> GetAsync(string email);
-
-    Task<long> CountAsync();
 }

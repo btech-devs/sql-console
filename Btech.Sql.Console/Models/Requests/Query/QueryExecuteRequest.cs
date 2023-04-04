@@ -7,16 +7,11 @@ public class QueryExecuteRequest
 {
     #region Public Constants
 
-    public const string DatabaseNameJsonPropertyName = "databaseName";
     public const string SqlJsonPropertyName = "sql";
 
     #endregion Public Constants
 
     #region Public Properties
-
-    [JsonProperty(DatabaseNameJsonPropertyName)]
-    [Required]
-    public string DatabaseName { get; set; }
 
     [JsonProperty(SqlJsonPropertyName)]
     [Required]

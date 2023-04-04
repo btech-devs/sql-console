@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Btech.Sql.Console.Enums;
 using Btech.Sql.Console.Extensions;
 using Btech.Sql.Console.Identity.Authorization.Base;
 using Btech.Sql.Console.Identity.Authorization.Requirements;
@@ -25,13 +27,31 @@ public class GoogleIdentityAuthorizationHandler : AuthorizationHandlerBase<Googl
 
         if (!email.IsNullOrEmpty())
         {
-            (bool Succeeded, bool Allowed) result = await this.IamService.IsAllowedUserAsync(email);
+            (bool Succeeded, bool Allowed, UserRole Role) result = await this.IamService.IsAllowedUserAsync(email);
 
             if (result.Succeeded)
             {
                 if (result.Allowed)
                 {
-                    context.Succeed(requirement);
+                    if (result.Role is not UserRole.None)
+                    {
+                        context.User.AddIdentity(
+                            new ClaimsIdentity(
+                                new List<Claim>
+                                {
+                                    new(Constants.Identity.ClaimTypes.Role, result.Role.ToString()!)
+                                }));
+
+                        this.Logger.LogInformation($"'{email}' authorized as '{result.Role.ToString()!}'.");
+                        context.Succeed(requirement);
+                    }
+                    else
+                    {
+                        this.Logger.LogInformation($"'{email}' have no role. Access denied.");
+
+                        context.Fail(
+                            new AuthorizationFailureReason(this, $"'{email}' have no role. Access denied."));
+                    }
                 }
                 else
                 {
@@ -45,7 +65,7 @@ public class GoogleIdentityAuthorizationHandler : AuthorizationHandlerBase<Googl
             {
                 // logged earlier
                 context.Fail(
-                    new AuthorizationFailureReason(this, "'GoogleIAM' service error. Authorization is not complete. Please, call the administrator."));
+                    new AuthorizationFailureReason(this, "GCP IAM service error. Authorization is not completed. Please, call the administrator."));
             }
         }
     }

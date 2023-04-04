@@ -97,10 +97,7 @@ public class GoogleIdentityAuthenticationHandler : AuthenticationHandlerBase<Aut
                 {
                     SessionData sessionDataRecord;
 
-                    long sessionCount = await this.SessionStorage.CountAsync();
-
-                    if (sessionCount > 0 &&
-                        (sessionDataRecord = await this.SessionStorage.GetAsync(email)) is not null)
+                    if ((sessionDataRecord = await this.SessionStorage.GetAsync(email)) is not null)
                     {
                         if (sessionDataRecord.IdToken == idToken)
                         {
@@ -117,6 +114,9 @@ public class GoogleIdentityAuthenticationHandler : AuthenticationHandlerBase<Aut
                                     {
                                         authenticateResult = AuthenticateResult.Success(this.CreateAuthenticationTicket(email));
                                         this.Logger.LogDebug($"Google authentication succeeded for user '{email}'.");
+
+                                        this.Context.Items
+                                            .Add(Constants.Identity.SessionDataItemName, sessionDataRecord);
                                     }
                                     else
                                     {
@@ -136,6 +136,9 @@ public class GoogleIdentityAuthenticationHandler : AuthenticationHandlerBase<Aut
                                                 {
                                                     authenticateResult = AuthenticateResult.Success(this.CreateAuthenticationTicket(email));
                                                     this.Logger.LogDebug($"Google refreshing succeeded for user '{email}'. Session has been updated.");
+
+                                                    this.Context.Items
+                                                        .Add(Constants.Identity.SessionDataItemName, newSessionData);
 
                                                     this.AddResponseHeader(
                                                         Constants.Identity.HeaderNames.Response.RefreshedIdTokenHeaderName,
@@ -174,7 +177,7 @@ public class GoogleIdentityAuthenticationHandler : AuthenticationHandlerBase<Aut
                     else
                     {
                         this.AddErrorHeader();
-                        this.Logger.LogWarning($"Session data was not found for user '{email}'. Records in session storage: '{sessionCount}'.");
+                        this.Logger.LogWarning($"Session data was not found for user '{email}'.");
                     }
                 }
                 else

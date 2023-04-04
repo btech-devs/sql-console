@@ -24,6 +24,18 @@ export class ConnectionService extends BaseService {
     }
 
     close(): Observable<Response<undefined>> {
-        return this.requestGet(`${this.endpoint}/close`);
+        return this.requestGet(
+            `${this.endpoint}/close`,
+            {},
+            null,
+            IdentityContext(IdentityContextTokenValue.Full));
+    }
+
+    getStaticConnection(): Observable<Response<SessionTokensResponse>> {
+        return this.requestGet(
+            `${this.endpoint}/static-connection`,
+            {},
+            null,
+            IdentityContext(IdentityContextTokenValue.Id));
     }
 }

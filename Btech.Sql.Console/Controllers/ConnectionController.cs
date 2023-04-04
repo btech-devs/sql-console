@@ -1,6 +1,7 @@
 using System.Net.Sockets;
 using Btech.Sql.Console.Attributes;
 using Btech.Sql.Console.Base;
+using Btech.Sql.Console.Enums;
 using Btech.Sql.Console.Interfaces;
 using Btech.Sql.Console.Models;
 using Btech.Sql.Console.Models.Requests;
@@ -12,6 +13,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Npgsql;
+using ServiceCollectionExtensions = Btech.Sql.Console.Extensions.ServiceCollectionExtensions;
 
 namespace Btech.Sql.Console.Controllers;
 
@@ -21,15 +23,17 @@ public class ConnectionController : UserAuthorizedControllerBase
 {
     public ConnectionController(
         ILogger<ConnectionController> logger,
-        ISessionStorage<SessionData> sessionStorage,
         JwtProvider jwtProvider,
-        IConnectorFactory connectorFactory)
-        : base(logger, sessionStorage)
+        IConnectorFactory connectorFactory,
+        ISessionStorage<SessionData> sessionStorage)
+        : base(logger)
     {
         this.JwtProvider = jwtProvider;
         this.ConnectorFactory = connectorFactory;
+        this.SessionStorage = sessionStorage;
     }
 
+    private ISessionStorage<SessionData> SessionStorage { get; }
     private JwtProvider JwtProvider { get; }
     private IConnectorFactory ConnectorFactory { get; }
 
@@ -98,7 +102,7 @@ public class ConnectionController : UserAuthorizedControllerBase
 
         if (isValidCredentials)
         {
-            SessionData sessionData = await this.GetSessionDataAsync();
+            SessionData sessionData = this.GetSessionData();
 
             string sessionToken = this.JwtProvider.CreateSessionToken(
                 instanceType: connectionRequest.InstanceType.ToString(),
@@ -123,7 +127,7 @@ public class ConnectionController : UserAuthorizedControllerBase
     {
         Response response = new();
 
-        SessionData sessionData = await this.GetSessionDataAsync();
+        SessionData sessionData = this.GetSessionData();
 
         sessionData
             .DeleteDbSession(this.Request.Headers[Constants.Identity.HeaderNames.Request.DbSessionTokenHeaderName].ToString());
@@ -133,5 +137,27 @@ public class ConnectionController : UserAuthorizedControllerBase
             sessionData);
 
         return response;
+    }
+
+    [HttpGet("static-connection")]
+    public Task<Response<AuthTokenResponse>> GetStaticConnectionAsync()
+    {
+        Response<AuthTokenResponse> response = new Response<AuthTokenResponse>();
+
+        if (ServiceCollectionExtensions.GetSessionStorageScheme() == SessionStorageScheme.StaticSessionStorage)
+        {
+            string host = Environment.GetEnvironmentVariable(Constants.Identity.StaticConnectionEnvironmentVariables.Host);
+            string instanceType = Environment.GetEnvironmentVariable(Constants.Identity.StaticConnectionEnvironmentVariables.InstanceType);
+
+            string sessionToken = this.JwtProvider.CreateSessionToken(
+                instanceType: instanceType,
+                host: host);
+
+            string refreshToken = this.JwtProvider.CreateRefreshToken();
+
+            response.Data = new AuthTokenResponse(sessionToken, refreshToken);
+        }
+
+        return Task.FromResult(response);
     }
 }

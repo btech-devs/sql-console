@@ -32,12 +32,42 @@ public static class ServiceCollectionExtensions
         return serviceCollection;
     }
 
+    private static string GetIamServiceGrantedRolesString()
+    {
+        string grantedRoles;
+
+        string environmentRoles =
+            Environment.GetEnvironmentVariable(Constants.IamServiceGrantedRolesEnvironmentVariableName);
+
+        if (!string.IsNullOrWhiteSpace(environmentRoles))
+        {
+            IEnumerable<string> roles = environmentRoles
+                .Split(
+                    separator: ',',
+                    options: StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+                .Select(role => $"roles/{role}");
+
+            grantedRoles = string.Join(',', roles);
+        }
+        else
+        {
+            grantedRoles = string.Join(
+                ',',
+                Constants.Identity.IamServiceRoleNames.CloudSqlAdmin,
+                Constants.Identity.IamServiceRoleNames.CloudSqlEditor,
+                Constants.Identity.IamServiceRoleNames.CloudSqlClient,
+                Constants.Identity.IamServiceRoleNames.Owner,
+                Constants.Identity.IamServiceRoleNames.Editor);
+        }
+
+        return grantedRoles;
+    }
+
     private static IamAuthorizationServiceConfiguration BuildAuthorizationServiceConfiguration()
     {
         IamAuthorizationServiceConfiguration config = new IamAuthorizationServiceConfiguration
         {
-            GrantedRoles = Environment.GetEnvironmentVariable(Constants.IamServiceGrantedRolesEnvironmentVariableName)
-                           ?? Constants.IamServiceGrantedRolesEnvironmentVariableValue
+            GrantedRoles = GetIamServiceGrantedRolesString()
         };
 
         string iamConfigJson =
@@ -51,8 +81,8 @@ public static class ServiceCollectionExtensions
             try
             {
                 // ReSharper disable once AssignNullToNotNullAttribute - checked above
-                IamJsonConfiguration configObject =
-                    Newtonsoft.Json.JsonConvert.DeserializeObject<IamJsonConfiguration>(iamConfigJson);
+                GoogleAccountJsonConfiguration configObject =
+                    Newtonsoft.Json.JsonConvert.DeserializeObject<GoogleAccountJsonConfiguration>(iamConfigJson);
 
                 // ReSharper disable once PossibleNullReferenceException - checked above
                 if (!configObject.ClientEmail.IsNullOrEmpty() &&

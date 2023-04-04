@@ -1,3 +1,5 @@
+using Btech.Sql.Console.Enums;
+using Btech.Sql.Console.Exceptions;
 using Btech.Sql.Console.Identity.Authorization.Configurations;
 using Btech.Sql.Console.Utils;
 using Google;
@@ -27,42 +29,77 @@ public class IamAuthorizationService
 
     private List<string> GrantedRoles { get; }
 
-    private string PreparePrivateKey()
-    {
-        return this.Config.PrivateKey.Replace("\\n", "\n");
-    }
-
     private CloudResourceManagerService InitializeService()
     {
+        CloudResourceManagerService cloudResourceManagerService;
+
         ServiceAccountCredential.Initializer initializer =
             new ServiceAccountCredential.Initializer(this.Config.ServiceAccountEmail)
             {
                 ProjectId = this.Config.ProjectId
             };
 
-        CloudResourceManagerService res = new CloudResourceManagerService(
-            new BaseClientService.Initializer
+        try
+        {
+            initializer = initializer.FromPrivateKey(this.Config.PrivateKey.Replace("\\n", "\n"));
+        }
+        catch (Exception exception)
+        {
+            string environmentVariableName = $"{Constants.IamServiceAccountConfigJsonEnvironmentVariableName}.private_key";
+
+            if (Environment.GetEnvironmentVariable(Constants.IamServiceAccountConfigJsonEnvironmentVariableName)
+                is null)
             {
-                HttpClientInitializer = GoogleCredential
-                    .FromServiceAccountCredential(
-                        new ServiceAccountCredential(
-                            initializer.FromPrivateKey(this.PreparePrivateKey())))
-                    .CreateScoped(CloudResourceManagerService.Scope.CloudPlatformReadOnly)
-            });
+                environmentVariableName = Constants.IamServiceAccountPrivateKeyEnvironmentVariableName;
+            }
+
+            throw new EnvironmentVariableException(exception, environmentVariableName);
+        }
+
+        try
+        {
+            cloudResourceManagerService = new CloudResourceManagerService(
+                new BaseClientService.Initializer
+                {
+                    HttpClientInitializer = GoogleCredential
+                        .FromServiceAccountCredential(
+                            new ServiceAccountCredential(initializer))
+                        .CreateScoped(CloudResourceManagerService.Scope.CloudPlatformReadOnly)
+                });
+        }
+        catch (Exception exception)
+        {
+            throw new EnvironmentVariableException(exception, Constants.IamServiceAccountConfigJsonEnvironmentVariableName);
+        }
 
         this.Logger.LogInformation($"IAM service successfully initialized with account: '{this.Config.ServiceAccountEmail}'.");
 
-        return res;
+        return cloudResourceManagerService;
     }
 
     private List<string> InitializeGrantedRoles()
     {
-        return this.Config.GrantedRoles
-            .Split(
-                separator: ',',
-                options: StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
-            .Select(role => $"roles/{role}")
-            .ToList();
+        string invalidRole;
+
+        List<string> roles =
+            this.Config.GrantedRoles
+                .Split(
+                    separator: ',',
+                    options: StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+                .ToList();
+
+        if ((invalidRole = roles.FirstOrDefault(
+                role =>
+                    role != Constants.Identity.IamServiceRoleNames.CloudSqlAdmin &&
+                    role != Constants.Identity.IamServiceRoleNames.CloudSqlClient &&
+                    role != Constants.Identity.IamServiceRoleNames.CloudSqlEditor &&
+                    role != Constants.Identity.IamServiceRoleNames.Owner &&
+                    role != Constants.Identity.IamServiceRoleNames.Editor)) is not null)
+        {
+            throw new ApplicationException($"Invalid configuration '{Constants.IamServiceGrantedRolesEnvironmentVariableName}': role '{invalidRole}' is not allowed.");
+        }
+
+        return roles;
     }
 
     private async Task<(bool Succeeded, Policy Policy)> TryGetIamPolicyAsync()
@@ -87,6 +124,8 @@ public class IamAuthorizationService
             this.Logger?.LogCritical(googleApiException, $"'GetIamPolicy' request failed. GoogleApiException occured: '{googleApiException.Message}'.");
 
             await AuditNotifier.ReportExceptionAsync(googleApiException, $"{nameof(IamAuthorizationService)}.{nameof(this.TryGetIamPolicyAsync)}");
+
+            throw new ExternalServiceException(googleApiException, "GoogleAPI", googleApiException.Message);
         }
         catch (Exception exception)
         {
@@ -104,9 +143,35 @@ public class IamAuthorizationService
         return (succeeded, policy);
     }
 
-    public async Task<(bool Succeeded, bool Allowed)> IsAllowedUserAsync(string userEmail)
+    private UserRole GetUserRole(List<Binding> userRoles)
+    {
+        UserRole role = UserRole.None;
+
+        if (userRoles.Any(binding =>
+                binding.Role is
+                    Constants.Identity.IamServiceRoleNames.CloudSqlAdmin or
+                    Constants.Identity.IamServiceRoleNames.Owner))
+        {
+            role = UserRole.Admin;
+        }
+        else if (userRoles.Any(binding => binding.Role is
+                     Constants.Identity.IamServiceRoleNames.CloudSqlEditor or
+                     Constants.Identity.IamServiceRoleNames.Editor))
+        {
+            role = UserRole.Editor;
+        }
+        else if (userRoles.Any(binding => binding.Role == Constants.Identity.IamServiceRoleNames.CloudSqlClient))
+        {
+            role = UserRole.Client;
+        }
+
+        return role;
+    }
+
+    public async Task<(bool Succeeded, bool Allowed, UserRole role)> IsAllowedUserAsync(string userEmail)
     {
         bool isAllowed = false;
+        UserRole userRole = UserRole.None;
 
         (bool Succeeded, Policy Policy) policyResponse = await this.TryGetIamPolicyAsync();
 
@@ -118,15 +183,23 @@ public class IamAuthorizationService
 
             if (policyGrantedRoles.Any())
             {
-                isAllowed = policyGrantedRoles
-                    .Any(role => role.Members.Contains($"user:{userEmail}"));
+                List<Binding> userRoles = policyGrantedRoles
+                    .Where(role => role.Members.Contains($"user:{userEmail}"))
+                    .ToList();
+
+                isAllowed = userRoles.Any();
+
+                if (isAllowed)
+                {
+                    userRole = this.GetUserRole(userRoles);
+                }
             }
             else
             {
-                this.Logger?.LogError($"No granted roles found in project '{this.Config.ProjectId}' IAM policy. Check projects environment variable '{Constants.IamServiceGrantedRolesEnvironmentVariableName}' or configure project on the GCP.");
+                this.Logger?.LogError($"No granted roles found in project '{this.Config.ProjectId}' IAM policy. Configure project on the GCP.");
             }
         }
 
-        return (policyResponse.Succeeded, isAllowed);
+        return (policyResponse.Succeeded, isAllowed, userRole);
     }
 }

@@ -43,13 +43,13 @@
                                     Duplicate connection
                                     <i class="bi bi-box-arrow-up-right"></i>
                                 </button>
-                                <button class="dropdown-item"
+                                <button *ngIf="!this.isStaticConnection" class="dropdown-item"
                                         (click)="this.newConnection()">
                                     <i class="bi bi-window-plus"></i>
                                     New connection
                                     <i class="bi bi-box-arrow-up-right"></i>
                                 </button>
-                                <button class="dropdown-item"
+                                <button *ngIf="!this.isStaticConnection" class="dropdown-item"
                                         (click)="this.changeInstance()">
                                     <i class="bi bi-arrow-clockwise"></i>
                                     Change instance
@@ -114,5 +114,3 @@
            (click)="this.infoMessage = undefined"></i>
     </div>
 </div>
-
-<app-confirm-modal #confirmModalComponent></app-confirm-modal>

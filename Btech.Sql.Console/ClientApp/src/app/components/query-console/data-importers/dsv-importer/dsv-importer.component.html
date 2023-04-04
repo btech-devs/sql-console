@@ -1,0 +1,251 @@
+<div class="modal fade"
+     tabindex="-1"
+     aria-hidden="true"
+     #modal>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5">
+                    DSV importer
+                </h1>
+            </div>
+            <div class="modal-body">
+                <form [formGroup]="this.form">
+                    <div class="form-floating alert-validation">
+                        <select id="table"
+                                formControlName="table"
+                                class="form-select"
+                                [ngClass]="{'selected': this.form.controls['table'].value != null,'is-invalid': !this.isImporting && !this.form.controls['table'].valid && this.form.controls['table'].touched}">
+                            <option *ngFor="let item of this.tableList"
+                                    [selected]="item.name == this.form.controls['table'].value?.name"
+                                    [ngValue]="item">
+                                {{item.name}}
+                            </option>
+                        </select>
+                        <label for="table">
+                            <span>Table</span>
+                        </label>
+
+                        <div class="alert alert-danger d-flex align-items-center shadow"
+                             role="alert"
+                             *ngIf="!this.isImporting && !this.form.controls['table'].valid && this.form.controls['table'].touched">
+                            The field is required.
+                        </div>
+                    </div>
+                    <div class="form-floating alert-validation mt-3">
+                        <select id="separator"
+                                formControlName="separator"
+                                class="form-select selected"
+                                [ngClass]="{'is-invalid': !this.isImporting && !this.form.controls['separator'].valid && this.form.controls['separator'].dirty}">
+                            <option *ngFor="let item of this.separators"
+                                    [selected]="item.name == this.form.controls['separator'].value?.name"
+                                    [ngValue]="item">
+                                {{item.name}}
+                            </option>
+                        </select>
+                        <label for="table">
+                            <span>Column separator</span>
+                        </label>
+
+                        <div class="alert alert-danger d-flex align-items-center shadow"
+                             role="alert"
+                             *ngIf="!this.isImporting && !this.form.controls['separator'].valid && this.form.controls['separator'].dirty">
+                            The field is required.
+                        </div>
+                    </div>
+                    <div class="form-floating alert-validation mt-3">
+                        <input id="chunkSize"
+                               formControlName="chunkSize"
+                               class="form-control"
+                               [min]="1"
+                               [max]="10000"
+                               type="text"
+                               (input)="numberOnly(this.form.controls.chunkSize)">
+                        <label for="chunkSize">
+                            <span>Chunk Size (min: 1, max: 10000)</span>
+                        </label>
+
+                        <div class="alert alert-danger d-flex align-items-center shadow"
+                             role="alert"
+                             *ngIf="!this.isImporting && !this.form.controls['chunkSize'].valid && this.form.controls['chunkSize'].dirty">
+                            {{this.form.controls['chunkSize']!.errors!['validationError']!}}
+                        </div>
+                    </div>
+
+                    <div class="form-check mt-3">
+                        <input class="form-check-input"
+                               type="checkbox"
+                               formControlName="doubleQuotes"
+                               id="doubleQuotes">
+                        <label class="form-check-label"
+                               for="doubleQuotes">
+                            Values are wrapped by double quotes
+                        </label>
+                    </div>
+                    <div class="form-check mt-3">
+                        <input class="form-check-input"
+                               type="checkbox"
+                               formControlName="rollbackOnError"
+                               id="rollbackOnError">
+                        <label class="form-check-label"
+                               for="rollbackOnError">
+                            Rollback on error
+                        </label>
+                    </div>
+                    <div class="form-floating alert-validation mt-3">
+                        <input id="rowsToSkip"
+                               formControlName="rowsToSkip"
+                               class="form-control"
+                               [min]="0"
+                               type="text"
+                               (input)="numberOnly(this.form.controls.rowsToSkip)">
+                        <label for="rowsToSkip">
+                            <span>Number of rows to skip</span>
+                        </label>
+
+                        <div class="alert alert-danger d-flex align-items-center shadow"
+                             role="alert"
+                             *ngIf="!this.isImporting && !this.form.controls['rowsToSkip'].valid && this.form.controls['rowsToSkip'].dirty">
+                            {{this.form.controls['rowsToSkip']!.errors!['validationError']!}}
+                        </div>
+                    </div>
+                </form>
+                <div *ngIf="!this.file"
+                     class="file-dragndrop mt-3"
+                     [ngClass]="{'file-dragndrop--active': this.isDragover}">
+                    <input type="file"
+                           class="d-none"
+                           (change)="this.file = fileInput.files![0]; fileInput.value = ''"
+                           accept=".csv,.dsv,.tsv"
+                           #fileInput>
+                    <button (click)="fileInput.click()"
+                            class="btn btn-outline-secondary">
+                        Open File
+                    </button>
+                    <span class="text-secondary ms-2">
+                        or drop file here.
+                        <span class="badge bg-secondary me-1">.csv</span>
+                        <span class="badge bg-secondary me-1">.dsv</span>
+                        <span class="badge bg-secondary">.tsv</span>
+                    </span>
+                </div>
+
+                <div *ngIf="this.file"
+                     class="file d-flex flex-nowrap justify-content-between align-items-center mt-2">
+                    <span>{{this.file.name}} ({{this.file.size | formatBytes}})</span>
+                    <button *ngIf="!this.isImporting"
+                            class="border-0 text-danger bg-transparent"
+                            (click)="this.reset()">
+                        <i class="bi bi-x fs-5"></i>
+                    </button>
+                </div>
+
+                <ng-container *ngIf="this.file">
+                    <div *ngIf="this.total"
+                         class="progress mt-2">
+                        <div class="progress-bar bg-success"
+                             role="progressbar"
+                             [ngStyle]="{'width':  this.loaded! / this.total! * 100 + '%'}"
+                             aria-valuenow="0"
+                             aria-valuemin="0"
+                             aria-valuemax="100">
+                            {{this.loaded! | formatBytes}}
+                            /
+                            {{this.total! | formatBytes}}
+                        </div>
+                    </div>
+
+                    <div *ngIf="this.isImporting"
+                         class="d-flex flex-column align-items-center justify-content-center mt-2">
+                        <div class="spinner-grow"
+                             role="status">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                        <p>
+                            Processing {{this.file!.name!}}...
+                        </p>
+                    </div>
+
+                    <div *ngIf="this.file && !this.isImporting && !this.response && !this.error"
+                         class="alert alert-info mt-2">
+                        <i class="bi bi-exclamation-octagon-fill text-info"></i>
+                        All empty columns will be replaced with
+                        <span class="badge bg-secondary">NULL</span>
+                    </div>
+
+                    <div *ngIf="this.response?.errorMessage"
+                         class="alert alert-danger mt-2 text-break">
+                        <i class="bi bi-exclamation-octagon-fill text-danger"></i>
+                        {{this.response!.errorMessage}}
+                    </div>
+
+                    <div *ngIf="this.error"
+                         class="alert alert-danger mt-2 text-break">
+                        <i class="bi bi-exclamation-octagon-fill text-danger"></i>
+                        {{this.error}}
+                    </div>
+
+                    <div *ngIf="this.isSent && !this.response && !this.error"
+                         class="alert alert-info mt-2">
+                        <i class="bi bi-exclamation-octagon-fill text-info"></i>
+                        The file has been successfully sent. If the file is large, it may take a long time to process.
+                    </div>
+
+                    <div *ngIf="this.response?.data"
+                         class="alert mt-2"
+                         [ngClass]="{'alert-success': this.response!.data!.recordsAffected! > 0, 'alert-info': this.response!.data!.recordsAffected! == 0}">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <span class="ms-2">
+                            Records affected: {{this.response!.data!.recordsAffected}}.
+                        </span>
+                        <span *ngIf="this.response?.data?.elapsedTimeMs"
+                              class="ms-2">
+                            Elapsed time: {{this.response!.data!.elapsedTimeMs! | formatMilliseconds}}
+                        </span>
+                    </div>
+                </ng-container>
+            </div>
+            <div class="modal-footer text-end">
+                <button type="button"
+                        class="btn btn-outline-danger"
+                        data-bs-dismiss="modal">
+                    Close
+                </button>
+                <div class="btn-group"
+                     role="group"
+                     aria-label="export group">
+                    <button class="btn btn-outline-success"
+                            (click)="this.import()"
+                            [disabled]="!this.file || this.isImporting || !this.form.valid">
+                        Import
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<button [@transitionAnimation]
+        *ngIf="this.showProgress"
+        title="show progress"
+        class="btn btn-outline-secondary progress-btn d-flex justify-content-between align-items-center"
+        [ngClass]="{'btn-outline-success': this.response?.data, 'btn-outline-danger': this.response?.errorMessage || this.error}"
+        (click)="this.openModal()">
+    <span>
+        <i *ngIf="this.error || this.response?.errorMessage"
+           class="bi bi-exclamation-octagon-fill">
+        </i>
+         <i *ngIf="this.response?.data"
+            class="bi bi-check-circle-fill">
+         </i>
+        <span *ngIf="this.isImporting"
+              class="spinner-grow spinner-grow-sm"
+              role="status"
+              aria-hidden="true">
+        </span>
+        <span class="ms-1">DSV Importer</span>
+    </span>
+    <span class="text-end">
+        <i class="bi bi-chevron-compact-up"></i>
+    </span>
+</button>
