@@ -28,11 +28,14 @@ import {FormatBytesPipe} from './_pipes/format-bytes.pipe';
 import {FormatMillisecondsPipe} from './_pipes/format-milliseconds.pipe';
 import {ConfirmModalComponent} from './components/confirm-modal/confirm-modal.component';
 import {ConfirmModalService} from './components/confirm-modal/confirm-modal.service';
+import {DatabaseViewerComponent} from './components/query-console/database-viewer/database-viewer.component';
+import {SizeChangeDirective} from './directives/size-change.directive';
 
 @NgModule({
     declarations: [
         AppComponent,
         QueryConsoleComponent,
+        DatabaseViewerComponent,
         DsvImporterComponent,
         ErrorComponent,
         CopyClick,
@@ -45,6 +48,7 @@ import {ConfirmModalService} from './components/confirm-modal/confirm-modal.serv
         ResizableRow,
         ResizableCol,
         CopyClick,
+        SizeChangeDirective,
         GoogleAuthorizationComponent
     ],
     imports: [

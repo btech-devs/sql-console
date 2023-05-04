@@ -1,5 +1,5 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {Table} from '../../models/table';
+import {ResultTable} from '../../models/resultTable';
 import {saveAs} from 'file-saver';
 import {QueryService} from '../../../../_services/query.service';
 import {HttpErrorResponse, HttpEventType} from '@angular/common/http';
@@ -61,7 +61,7 @@ export class DsvExporterComponent implements OnInit {
     private _isExecuteToDsv: boolean = false;
     private _sql?: string;
     private _database?: string;
-    private _data?: Table;
+    private _data?: ResultTable;
     private _exporting$?: Subscription;
     private _error?: string = undefined;
 
@@ -278,7 +278,7 @@ export class DsvExporterComponent implements OnInit {
         }
     }
 
-    openExportToDsvModal(data: Table | undefined): void {
+    openExportToDsvModal(data: ResultTable | undefined): void {
         this._isExecuteToDsv = false;
         this._data = data;
 

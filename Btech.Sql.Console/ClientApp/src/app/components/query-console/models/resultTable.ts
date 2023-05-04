@@ -1,7 +1,7 @@
 import {QueryTable} from '../../../_models/responses/query/queryTable.model';
 import {QueryColumn} from '../../../_models/responses/query/queryColumn.model';
 
-export class Table {
+export class ResultTable {
     private _name: string = '';
     private _header: TableCell[] = new Array<TableCell>();
     private _body: TableCell[][] = [];
@@ -25,8 +25,8 @@ export class Table {
     constructor() {
     }
 
-    static createFromQueryTable(queryTable: QueryTable, name: string = ''): Table {
-        let table = new Table();
+    static createFromQueryTable(queryTable: QueryTable, name: string = ''): ResultTable {
+        let table = new ResultTable();
 
         table.name = name;
 

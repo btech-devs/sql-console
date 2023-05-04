@@ -6,7 +6,9 @@ import {Database} from '../_models/responses/database/database.model';
 import {Response} from '../_models/responses/base/response';
 import {PaginationResponse} from '../_models/responses/base/pagination-response';
 import {IdentityContext, IdentityContextTokenValue} from '../utils';
-import {TableSchema} from '../_models/responses/database/tableSchema.model';
+import {Table} from '../_models/responses/database/table.model';
+import {Schema} from '../_models/responses/database/schema.model';
+import {View} from '../_models/responses/database/view.model';
 
 @Injectable()
 export class DatabaseService extends BaseService {
@@ -37,10 +39,46 @@ export class DatabaseService extends BaseService {
                 IdentityContext(IdentityContextTokenValue.Full));
     }
 
-    getTableSchema(databaseName: string, tableName: string): Observable<Response<TableSchema>> {
+    getSchemaTable(databaseName: string, schemaName: string, tableName: string): Observable<Response<Table>> {
         return this
-            .requestGet<Response<TableSchema>>(
-                `/api/databases/${databaseName}/${tableName}`,
+            .requestGet<Response<Table>>(
+                `/api/databases/${databaseName}/${schemaName}/tables/${tableName}`,
+                {},
+                null,
+                IdentityContext(IdentityContextTokenValue.Full));
+    }
+
+    getSchemaTables(databaseName: string, schemaName: string): Observable<Response<Schema>> {
+        return this
+            .requestGet<Response<Schema>>(
+                `/api/databases/${databaseName}/${schemaName}/tables`,
+                {},
+                null,
+                IdentityContext(IdentityContextTokenValue.Full));
+    }
+
+    getSchemaViews(databaseName: string, schemaName: string): Observable<Response<Schema>> {
+        return this
+            .requestGet<Response<Schema>>(
+                `/api/databases/${databaseName}/${schemaName}/views`,
+                {},
+                null,
+                IdentityContext(IdentityContextTokenValue.Full));
+    }
+
+    getViewColumns(databaseName: string, schemaName: string, viewName: string): Observable<Response<View>> {
+        return this
+            .requestGet<Response<View>>(
+                `/api/databases/${databaseName}/${schemaName}/views/${viewName}`,
+                {},
+                null,
+                IdentityContext(IdentityContextTokenValue.Full));
+    }
+
+    getSchemaRoutines(databaseName: string, schemaName: string): Observable<Response<Schema>> {
+        return this
+            .requestGet<Response<Schema>>(
+                `/api/databases/${databaseName}/${schemaName}/routines`,
                 {},
                 null,
                 IdentityContext(IdentityContextTokenValue.Full));

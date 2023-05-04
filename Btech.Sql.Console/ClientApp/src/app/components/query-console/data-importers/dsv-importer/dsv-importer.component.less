@@ -25,3 +25,58 @@
 
   z-index: 1091;
 }
+
+.select-box {
+  z-index: 9999;
+
+  &__selector {
+    width: 100%;
+    color: #000;
+    border: 1px solid #ced4da;
+    position: relative;
+    text-align: left;
+    overflow: hidden;
+
+    &:hover, &.show {
+      color: #fff;
+    }
+
+    & i {
+      position: absolute;
+      top: 4px;
+      right: 10px;
+    }
+
+    &-text {
+      display: block;
+      margin-right: 20px;
+      white-space: nowrap;
+      color: black;
+      overflow: hidden;
+      transition: color 0.3s ease;
+    }
+
+    &:hover &-text, &.show &-text {
+      color: #fff;
+    }
+
+    &:after {
+      position: absolute;
+      right: 10px;
+      top: 13px;
+    }
+  }
+
+  .dropdown-menu {
+    width: 100%;
+    max-height: 400px;
+    overflow: auto;
+
+    .search {
+      input {
+        border: none;
+        padding: 5px 18px;
+      }
+    }
+  }
+}

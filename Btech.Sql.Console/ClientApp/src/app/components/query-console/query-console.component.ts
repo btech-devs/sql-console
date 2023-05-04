@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import {Title} from '@angular/platform-browser';
 import {Console} from './models/console';
-import {Table} from './models/table';
+import {ResultTable} from './models/resultTable';
 import * as CodeMirror from 'codemirror';
 import {Editor, LineHandle} from 'codemirror';
 import {Annotation} from 'codemirror/addon/lint/lint';
@@ -41,15 +41,15 @@ import 'codemirror/addon/edit/closebrackets';
 import 'codemirror/addon/edit/matchbrackets';
 import {Database} from '../../_models/responses/database/database.model';
 import {DatabaseService} from '../../_services/database.service';
-import {TableSchema} from '../../_models/responses/database/tableSchema.model';
+import {Table} from '../../_models/responses/database/table.model';
 import {Response} from '../../_models/responses/base/response';
 import {DsvExporterComponent} from './data-exporters/dsv-exporter/dsv-exporter.component';
 import {InstanceType} from '../../_models/instance-type';
-import {AlertStorage, SESSION_TOKEN_KEY} from '../../utils';
+import {SESSION_TOKEN_KEY} from '../../utils';
 import {SessionStorageService} from '../../_services/sessionStorageService';
-import {Column} from '../../_models/responses/database/column.model';
-import {PaginationResponse} from '../../_models/responses/base/pagination-response';
 import {ConfirmModalService} from '../confirm-modal/confirm-modal.service';
+import {DatabaseViewerComponent} from './database-viewer/database-viewer.component';
+import {Schema} from '../../_models/responses/database/schema.model';
 
 declare var $: any;
 
@@ -59,9 +59,9 @@ type QueryViewModel = {
     rawQuery?: string
 }
 
-type TableSchemaViewModel = TableSchema & { showColumns: boolean, loading: boolean }
-
 const CHARACTER_VALIDATION_LIMIT: number = 5000;
+
+type TableSchemaViewModel = Table & { schema: string };
 
 @Component({
     selector: 'app-query',
@@ -94,13 +94,10 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
     private _anyValidSelect: number = 0;
     private _queryLimit?: number = 100;
     private _console: Console = new Console();
-    private _results: Table[] = [];
+    private _results: ResultTable[] = [];
     private _isExecuting: boolean = false;
-    private _isFetchingInstanceData: boolean = true;
+    private _isFetchingInstanceData: boolean = false;
     private _isSidebar: boolean = true;
-    private _databases: Database[] = [];
-    private _selectedDatabase?: Database;
-    private _selectedDatabaseTables?: TableSchemaViewModel[];
     private _instanceType?: InstanceType;
     private _codeMirrorMode?: string;
     private _sqlParserOptions: Option = {};
@@ -108,12 +105,8 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
     private _lastSelectQueryIndex?: number;
     private _tabCount: number = 0;
     private _host?: string;
-    private _databasePage: number = 0;
-    private _databasesTotalAmount?: number;
-    private _databasesPerPage?: number;
-    private _databaseSearch: string = '';
-    private _databaseSearchTimeout?: NodeJS.Timeout;
-    private _fullTableSchema: { [name: string]: Partial<TableSchemaViewModel> } = {};
+    private _selectedDatabase?: Database;
+    private _selectedDatabaseTables?: TableSchemaViewModel[];
 
     public readonly isMacOs: boolean = /Mac/i.test(navigator.userAgent);
 
@@ -126,20 +119,8 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
         return this._tableViewPopupState;
     }
 
-    get databasePage(): number {
-        return this._databasePage;
-    }
-
-    get databasesPerPage(): number | undefined {
-        return this._databasesPerPage;
-    }
-
-    get databasesTotalAmount(): number | undefined {
-        return this._databasesTotalAmount;
-    }
-
-    get databaseSearch(): string {
-        return this._databaseSearch;
+    get selectedDatabase(): Database | undefined {
+        return this._selectedDatabase;
     }
 
     get selectedTableIndex(): number {
@@ -174,7 +155,7 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
         return this._console;
     }
 
-    get results(): Table[] {
+    get results(): ResultTable[] {
         return this._results;
     }
 
@@ -190,48 +171,21 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
         return this._isSidebar;
     }
 
-    get databases(): Database[] {
-        return this._databases;
-    }
-
-    get selectedDatabase(): Database | undefined {
-        return this._selectedDatabase;
-    }
-
     get selectedDatabaseTables(): TableSchemaViewModel[] | undefined {
         return this._selectedDatabaseTables;
     }
+
 
     // endregion Public Getters
 
     // region Public Setters
 
-    set results(value: Table[]) {
+    set selectedDatabaseTables(value: TableSchemaViewModel[] | undefined) {
+        this._selectedDatabaseTables = value;
+    }
+
+    set results(value: ResultTable[]) {
         this._results = value;
-    }
-
-    set databasePage(value: number) {
-        if (value < 0)
-            value = 0;
-
-        if (this._databases.length > 0 || value <= this._databasePage) {
-            this._databasePage = value;
-            this.getDatabases();
-        }
-    }
-
-    set databaseSearch(value: string) {
-        this._databaseSearch = value;
-
-        if (this._databaseSearchTimeout)
-            clearTimeout(this._databaseSearchTimeout);
-
-        this._databaseSearchTimeout = setTimeout(
-            () => {
-                this._databasePage = 0;
-                this.getDatabases();
-            },
-            300);
     }
 
     set tableViewPopupState(value: boolean) {
@@ -251,17 +205,6 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
         }
     }
 
-    set selectedDatabase(value) {
-        this._selectedDatabase = value;
-        this.databaseSelector?.nativeElement.classList.remove('btn-outline-danger');
-
-        $(this.databaseSelector?.nativeElement).click();
-
-        if (value != undefined) {
-            this.selectDatabase();
-        }
-    }
-
     set selectedTableIndex(value: number) {
         this._selectedTableIndex = value;
     }
@@ -270,10 +213,10 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
 
     // region ViewChild fields
 
+    @ViewChild('databaseViewer') databaseViewer!: DatabaseViewerComponent;
     @ViewChild('textArea') textArea?: ElementRef;
     @ViewChild('consoleHandle') consoleHandle?: ElementRef;
     @ViewChild('resultHandle') resultHandle?: ElementRef;
-    @ViewChild('databaseSelector') databaseSelector?: ElementRef;
     @ViewChild('queryMain') queryMain?: ElementRef;
     @ViewChild('querySidebar') querySidebar?: ElementRef;
     @ViewChild('dsvExporterComponent') dsvExporter?: DsvExporterComponent;
@@ -454,6 +397,19 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
         // validate syntax
         // thrown exception on syntax error
 
+        let keys = Object.keys(this._schema);
+
+        let getTableSchema = (tableName: string): string[] | undefined => {
+            let schema: string[] | undefined = undefined;
+
+            let key = keys.find(key => key.endsWith(tableName));
+
+            if (key)
+                schema = this._schema[key];
+
+            return schema;
+        };
+
         try {
             let ast: AST | AST[] = this._sqlParser.astify(query.rawQuery, option);
 
@@ -493,7 +449,7 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
             // validate tableNames
             if (tableList.length > 0)
                 tableList.forEach(tableName => {
-                    if (!this._schema[tableName]) {
+                    if (!getTableSchema(tableName)) {
                         query.lines.forEach((queryLine: LineHandle) => {
                             let tableNameFirstCharacterPosition = queryLine.text.search(new RegExp(`[\["\\s]${tableName}`));
 
@@ -530,6 +486,9 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
                 let tableName = path[1];
                 let columnName = path[2];
 
+                if (tableName.includes('.'))
+                    tableName = tableName.split('.')[1];
+
                 if (!tableList.includes(tableName)) {
                     query.lines.forEach((queryLine, lineIndex) => {
                         let tableNameFirstCharacterPosition = queryLine.text.search(new RegExp(`[\["\\s]${tableName}`));
@@ -556,10 +515,10 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
                     });
                 }
 
-                if (this._schema[tableName] && !(this._schema[tableName].includes(columnName))) {
+                if (!(getTableSchema(tableName)?.includes(columnName))) {
                     query.lines.forEach((queryLine, lineIndex) => {
                         let columnNameFirstCharacterPosition = queryLine.text
-                            .search(new RegExp(`(?<=\\.")${columnName}`));
+                            .search(new RegExp(`(?<=[."])${columnName}`));
 
                         if (columnNameFirstCharacterPosition == -1)
                             columnNameFirstCharacterPosition = queryLine.text
@@ -598,7 +557,7 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
                     let tableThatContainsColumns: number = 0;
 
                     tableList.forEach(tableName => {
-                        if ((tableName in this._schema) && this._schema[tableName].includes(columnName)) {
+                        if (getTableSchema(tableName)?.includes(columnName)) {
                             tableThatContainsColumns++;
                         }
                     });
@@ -636,7 +595,7 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
         } else {
             if (tableList.length > 0)
                 tableList.forEach(tableName => {
-                    if (this._schema[tableName]) {
+                    if (getTableSchema(tableName)) {
                         query.lines.forEach((queryLine: LineHandle) => {
                             let tableNameFirstCharacterPosition = queryLine.text.search(new RegExp(`[\["|\\s]${tableName}`));
 
@@ -664,6 +623,7 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
                 });
         }
     }
+
 
     private executeRawSql(sql: string, newTab: boolean = false): Observable<any> {
         this._isExecuting = true;
@@ -737,7 +697,7 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
                         }
 
                         if (response.data?.table != undefined) {
-                            let table = Table.createFromQueryTable(response.data.table);
+                            let table = ResultTable.createFromQueryTable(response.data.table);
 
                             if (newTab) {
                                 this._tabCount++;
@@ -815,8 +775,6 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
 
         if (this._host)
             this._titleService.setTitle(`SQL Console | ${this._instanceType} | ${this._host}`);
-
-        this.getDatabases();
     }
 
     ngOnDestroy(): void {
@@ -961,6 +919,37 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
 
     // region Public Methods
 
+    public onExecuteRawSql(data: { sql: string, newTab: boolean }) {
+        this.executeRawSql(data.sql, data.newTab).subscribe();
+    }
+
+    public onSelectDatabase(database: Database) {
+        this._selectedDatabase = database;
+    }
+
+    public onSelectSchema(schema: Schema[]) {
+        this.selectedDatabaseTables = [];
+        this._schema = {};
+
+        this._isFetchingInstanceData = true;
+
+        schema.forEach(schema => {
+            schema.tables?.forEach(table => {
+                let tableView: TableSchemaViewModel = table as TableSchemaViewModel;
+                tableView.schema = schema.name!;
+
+                if (table.columns)
+                    this._schema[`${tableView.schema}.${table.name!}`] = table.columns.map(column => column.name!);
+
+                this._selectedDatabaseTables!.push(tableView);
+            });
+        });
+
+        this._hintOptions.tables = this._schema;
+        this._isFetchingInstanceData = false;
+        this._codeEditor?.performLint();
+    }
+
     @HostListener('document:keydown', ['$event'])
     closeResultModal(event: KeyboardEvent & { delegateTarget: any }): void {
         if (event.key == 'Escape' && this.tableViewPopupState && event.delegateTarget == null) {
@@ -1080,9 +1069,13 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
             this._isExecuting = false;
         } else if (!this.selectedDatabase) {
             this.isSidebar = true;
-            this.databaseSelector?.nativeElement.classList.add('btn-outline-danger');
-            this.databaseSelector?.nativeElement.scrollIntoView();
+
             this.console.pushWarning('Execution rejected. Reason: \'Select database before execution\'.');
+
+            console.log(this.databaseViewer);
+
+            this.databaseViewer.databaseSelector?.nativeElement.classList.add('btn-outline-danger');
+            this.databaseViewer.databaseSelector?.nativeElement.scrollIntoView();
         }
     }
 
@@ -1094,95 +1087,9 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
         this._queryLimit = value ? parseInt(value) : undefined;
     }
 
-    selectDatabase(): void {
-        this._isFetchingInstanceData = true;
-        this._selectedDatabaseTables = undefined;
-        this.console.pushMessage(`Start fetching schema for database '${this.selectedDatabase?.name}'.`);
-        this._databaseService
-            .getDatabase(this.selectedDatabase!.name!)
-            .subscribe({
-                next: response => {
-                    if (response.errorMessage) {
-                        this.console.pushDanger(`Something went wrong on fetching database list. Message: '${response.errorMessage}'.`);
-                    } else if (response.data) {
-                        this._schema = {};
-
-                        response.data.tables?.forEach(table => {
-                            this._schema[table.name!] = table.columns!.map(column => column.name!);
-                        });
-
-                        this._selectedDatabaseTables = response.data!.tables as TableSchemaViewModel[];
-                        this._fullTableSchema = {};
-
-                        this._hintOptions.tables = this._schema;
-
-                        this._codeEditor?.performLint();
-                    }
-                },
-                error: error => {
-                    this.console.pushDanger(error.message);
-                    this._isFetchingInstanceData = false;
-                },
-                complete: () => this._isFetchingInstanceData = false
-            });
-    }
-
-    getColumnAdditionalInfo(column: Column): string | undefined {
-        let info: string | undefined = column.type;
-
-        if (column.isPrimaryKey == true)
-            info += ' (PK)';
-        else if (column.isForeignKey == true)
-            info += ' (FK)';
-        else if (column.maxLength)
-            info += ` (${column.maxLength})`;
-
-        return info;
-    }
-
     onResizeSidebar(value: number): void {
         if (this.queryMain)
             this.queryMain.nativeElement.style.width = (100 - value) + '%';
-    }
-
-    reconnectToTheInstance() {
-        this.getDatabases();
-
-        if (this.selectedDatabase?.name) {
-            this._fullTableSchema = {};
-            this._selectedDatabaseTables = undefined;
-            this.selectDatabase();
-        }
-    }
-
-    getDatabases(): void {
-        this._isFetchingInstanceData = true;
-
-        this._databaseService
-            .getDatabases(this._databasePage, 5, this._databaseSearch)
-            .subscribe({
-                next: (response: PaginationResponse<Database>) => {
-                    if (response.errorMessage)
-                        this.console.pushDanger(`Something went wrong on fetching database list. Message: '${response.errorMessage}'.`);
-                    else if (response.entities) {
-                        this._databasesTotalAmount = response.totalAmount;
-                        this._databasesPerPage = response.perPage;
-                        this._databases = response.entities;
-
-                        if (this.selectedDatabase != undefined) {
-                            this.selectDatabase();
-                        }
-                    }
-                },
-                error: error => {
-                    this._databases = [];
-                    this.console.pushDanger(error.message);
-                    this._isFetchingInstanceData = false;
-                },
-                complete: () => {
-                    this._isFetchingInstanceData = false;
-                }
-            });
     }
 
     closeResultTab(resultIndex: number): void {
@@ -1203,170 +1110,18 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
             this._codeEditor!.setValue(value);
     }
 
-    viewTable(table: string, newTab: boolean = false): void {
-        let viewTableSql: string = '';
-
-        // @formatter:off
-        switch (this._instanceType) {
-            case InstanceType.PgSql: {
-                viewTableSql = `SELECT * FROM "${table}" LIMIT ${this.queryLimit}`;
-                break;
-            }
-            case InstanceType.MsSql: {
-                // @ts-ignore
-                viewTableSql = `SELECT TOP ${this.queryLimit} * FROM [${table}]`;
-                break;
-            }
+    onResizeSidebarContent(sidebar: HTMLDivElement, navigation: HTMLDivElement): void {
+        if (sidebar.scrollHeight > sidebar.clientHeight) {
+            navigation.classList.add('d-flex');
+            navigation.classList.remove('d-none');
+        } else {
+            navigation.classList.remove('d-flex');
+            navigation.classList.add('d-none');
         }
-        // @formatter:on
-
-        this.executeRawSql(viewTableSql, newTab)
-            .subscribe();
     }
 
-    viewRowCount(table: string, newTab: boolean = false): void {
-        let rowCountSql: string = '';
-
-        // @formatter:off
-        switch (this._instanceType) {
-            case InstanceType.PgSql: {
-                rowCountSql = `SELECT COUNT(*) FROM "${table}"`;
-                break;
-            }
-            case InstanceType.MsSql: {
-                // @ts-ignore
-                rowCountSql = `SELECT COUNT(*) FROM [${table}]`;
-                break;
-            }
-        }
-        // @formatter:on
-
-        this.executeRawSql(rowCountSql, newTab)
-            .subscribe();
-    }
-
-    addSelectTemplate(table: string): void {
-        let selectFromTablePattern: string = '';
-
-        // @formatter:off
-        switch (this._instanceType) {
-            case InstanceType.PgSql: {
-                selectFromTablePattern = `SELECT "column_1", "column_2" FROM "${table}" WHERE condition...;`;
-                break;
-            }
-            case InstanceType.MsSql: {
-                selectFromTablePattern = `SELECT [column_1], [column_2] FROM [${table}] WHERE condition...;`;
-                break;
-            }
-        }
-        // @formatter:on
-
-        this.insertNewLineToEditor(selectFromTablePattern);
-    }
-
-    addUpdateTemplate(table: string): void {
-        let updateTablePattern: string = '';
-
-        // @formatter:off
-        switch (this._instanceType) {
-            case InstanceType.PgSql: {
-                updateTablePattern = `UPDATE "${table}" SET "column" = 'value' WHERE condition...;`
-                break;
-            }
-            case InstanceType.MsSql: {
-                updateTablePattern = `UPDATE [${table}] SET [column] = 'value' WHERE condition...;`
-                break;
-            }
-        }
-        // @formatter:on
-
-        this.insertNewLineToEditor(updateTablePattern);
-    }
-
-    addInsertTemplate(table: string): void {
-        let insertTablePattern: string = '';
-        let tableSchema: TableSchema = this.selectedDatabaseTables!.find(tableSchema => tableSchema.name == table)!;
-
-        let insertColumnsPattern = '(';
-
-        tableSchema.columns?.forEach((column: Column, index: number) => {
-            if (index != 0) {
-                insertColumnsPattern += ', ';
-            }
-
-            // @formatter:off
-            switch (this._instanceType) {
-                case InstanceType.PgSql: {
-                    insertColumnsPattern += `"${column.name}"`;
-
-                    break;
-                }
-                case InstanceType.MsSql: {
-                    insertColumnsPattern += `[${column.name}]`;
-
-                    break;
-                }
-            }
-            // @formatter:on
-
-        });
-
-        insertColumnsPattern += ')';
-
-        // @formatter:off
-        switch (this._instanceType) {
-            case InstanceType.PgSql: {
-                insertTablePattern = `INSERT INTO "${table}" ${insertColumnsPattern} VALUES(value1, value2, ...)`
-                break;
-            }
-            case InstanceType.MsSql: {
-                insertTablePattern = `INSERT INTO [${table}] ${insertColumnsPattern} VALUES(value1, value2, ...)`
-                break;
-            }
-        }
-        // @formatter:on
-
-        this.insertNewLineToEditor(insertTablePattern);
-    }
-
-    addDeleteTemplate(table: string): void {
-        let deleteFromTablePattern: string = '';
-
-        // @formatter:off
-        switch (this._instanceType) {
-            case InstanceType.PgSql: {
-                deleteFromTablePattern = `DELETE FROM "${table}" WHERE condition...;`
-                break;
-            }
-            case InstanceType.MsSql: {
-                deleteFromTablePattern = `DELETE FROM [${table}] WHERE condition...;`
-                break;
-            }
-        }
-        // @formatter:on
-
-        this.insertNewLineToEditor(deleteFromTablePattern);
-    }
-
-    getFullTableSchema(tableName: string): Partial<TableSchemaViewModel> {
-
-        if (!this._fullTableSchema[tableName]) {
-            this._fullTableSchema[tableName] = {
-                loading: true
-            };
-
-            this._databaseService.getTableSchema(this.selectedDatabase!.name!, tableName)
-                .subscribe(response => {
-                    if (response.errorMessage) {
-                        AlertStorage.error = response.errorMessage;
-                    } else {
-                        this._fullTableSchema[tableName] = response.data!;
-                        this._fullTableSchema[tableName].loading = false;
-                    }
-                });
-        }
-
-        return this._fullTableSchema[tableName];
+    scrollTo(element: HTMLElement, scrollTo: number): void {
+        $(element).animate({scrollTop: scrollTo});
     }
 
     // endregion Public Methods

@@ -7,7 +7,7 @@ public class Database
     #region Public Constants
 
     public const string NameJsonPropertyName = "name";
-    public const string TablesJsonPropertyName = "tables";
+    public const string SchemasJsonPropertyName = "schemas";
     public const string PageCountJsonPropertyName = "pageCount";
 
     #endregion Public Constants
@@ -17,8 +17,8 @@ public class Database
     [JsonProperty(NameJsonPropertyName, NullValueHandling = NullValueHandling.Ignore)]
     public string Name { get; set; }
 
-    [JsonProperty(TablesJsonPropertyName, NullValueHandling = NullValueHandling.Ignore)]
-    public List<Table> Tables { get; set; }
+    [JsonProperty(SchemasJsonPropertyName, NullValueHandling = NullValueHandling.Ignore)]
+    public List<Schema> Schemas { get; set; }
 
     [JsonProperty(PageCountJsonPropertyName, NullValueHandling = NullValueHandling.Ignore)]
     public int? PageCount { get; set; }

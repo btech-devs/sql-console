@@ -36,7 +36,7 @@ public abstract class ConnectorBase : IDisposable, IAsyncDisposable
 
     #region Abstract Methods
 
-    public abstract DbCommand CreateCommand(string sql);
+    public abstract DbCommand CreateCommand(string sql = null);
     protected abstract bool NeedQuotes(string postgresType);
 
     protected abstract string ConvertToInsertSql(
@@ -71,7 +71,7 @@ public abstract class ConnectorBase : IDisposable, IAsyncDisposable
                     .GetSchemaAsync("Columns", new[] { null, null, table }))
                 .AsEnumerable()
                 .ToList();
-            
+
             if (rollbackOnError)
                 dbTransaction = await this.Connection.BeginTransactionAsync();
 

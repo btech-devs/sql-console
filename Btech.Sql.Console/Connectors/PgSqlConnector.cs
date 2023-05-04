@@ -36,7 +36,7 @@ public class PgSqlConnector : ConnectorBase
 
     public override NpgsqlConnection Connection { get; }
 
-    public override DbCommand CreateCommand(string sql) => new NpgsqlCommand(sql, this.Connection);
+    public override DbCommand CreateCommand(string sql = null) => new NpgsqlCommand(sql, this.Connection);
 
     protected override string ConvertToInsertSql(List<(string ColumnName, bool isQuoted)> header, string table, params List<string>[] rows)
     {

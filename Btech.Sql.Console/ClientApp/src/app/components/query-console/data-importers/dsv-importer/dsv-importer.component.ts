@@ -5,11 +5,12 @@ import {HttpEventType} from '@angular/common/http';
 import {Response} from '../../../../_models/responses/base/response';
 import {Query} from '../../../../_models/responses/query/query.model';
 import {AlertStorage, getTransitionAnimation, separators} from '../../../../utils';
-import {TableSchema} from '../../../../_models/responses/database/tableSchema.model';
+import {Table} from '../../../../_models/responses/database/table.model';
 import {AbstractControl, FormControl, FormGroup, ValidationErrors, ValidatorFn, Validators} from '@angular/forms';
 
 declare var $: any;
 
+type TableSchemaViewModel = Table & { schema: string };
 @Component({
     selector: 'app-dsv-importer',
     animations: [getTransitionAnimation()],
@@ -26,13 +27,22 @@ export class DsvImporterComponent implements OnInit, AfterViewInit {
     private _file?: File;
     private _isDragover: boolean = false;
     private _database?: string;
-    private _tableList?: TableSchema[];
+    private _tableList?: TableSchemaViewModel[];
     private _total?: number;
     private _loaded?: number;
     private _response?: Response<Query>;
     private _error?: string;
     private _showProgress: boolean = false;
     private _form!: FormGroup;
+    private _tableSearch: string = '';
+
+    get tableSearch(): string {
+        return this._tableSearch;
+    }
+
+    set tableSearch(value: string) {
+        this._tableSearch = value;
+    }
 
     get isDragover(): boolean {
         return this._isDragover;
@@ -78,7 +88,7 @@ export class DsvImporterComponent implements OnInit, AfterViewInit {
         return separators;
     }
 
-    get tableList(): TableSchema[] | undefined {
+    get tableList(): TableSchemaViewModel[] | undefined {
         return this._tableList;
     }
 
@@ -86,7 +96,7 @@ export class DsvImporterComponent implements OnInit, AfterViewInit {
         this._database = value;
     }
 
-    @Input('tableList') set tableList(value: TableSchema[] | undefined) {
+    @Input('tableList') set tableList(value: TableSchemaViewModel[] | undefined) {
         this._tableList = value;
     }
 
@@ -124,7 +134,7 @@ export class DsvImporterComponent implements OnInit, AfterViewInit {
     numberOnly(control?: AbstractControl) {
         if (control) {
             let value: string = control.value?.toString();
-            
+
             control.setValue(+value?.replace(/[^0-9.]/g, ''));
         }
     }
@@ -149,9 +159,6 @@ export class DsvImporterComponent implements OnInit, AfterViewInit {
                     this.numberRangeValidator(0, Number.MAX_VALUE)
                 ]
             ),
-        });
-
-        this._form.controls.chunkSize.valueChanges.subscribe(control => {
         });
     }
 
@@ -206,6 +213,7 @@ export class DsvImporterComponent implements OnInit, AfterViewInit {
             this._isSent = false;
             this._error = undefined;
             this._showProgress = false;
+            this._tableSearch = '';
             this._form.controls.table.reset();
         }
     }
@@ -267,5 +275,19 @@ export class DsvImporterComponent implements OnInit, AfterViewInit {
                         AlertStorage.error = error.message;
                     }
                 });
+    }
+
+    onSearchInput(event: any): void {
+        this._tableSearch = event.target.value;
+    }
+
+    onSelectTable(table: TableSchemaViewModel) {
+        this.form.controls.table.setValue(table);
+    }
+
+    applyFilter(): TableSchemaViewModel[] {
+        return this._tableList
+            ?.filter(table =>
+                `${table.schema}.${table.name}`.toLowerCase().includes(this.tableSearch.toLowerCase())) ?? [];
     }
 }

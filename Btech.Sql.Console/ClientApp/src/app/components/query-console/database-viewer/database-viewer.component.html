@@ -1,0 +1,613 @@
+<button title="Reload database structure"
+        (click)="this.reloadDatabaseStructure()"
+        class="btn btn-sm p-1 py-0 btn-outline-secondary fs-6 reconnect-button">
+    <svg xmlns="http://www.w3.org/2000/svg"
+         width="16"
+         height="16"
+         fill="currentColor"
+         class="bi bi-arrow-clockwise"
+         viewBox="0 0 16 16">
+        <path fill-rule="evenodd"
+              d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+        <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+    </svg>
+</button>
+<p class="text-center mb-0">Database</p>
+<div *ngIf="this.host"
+     class="overflow-hidden text-center">
+    <span class="fst-italic text-secondary text-nowrap"
+          copied>
+        {{this.host}}
+    </span>
+</div>
+<hr>
+<div class="btn-group btn-group-sm d-flex flex-nowrap database-picker__wrapper mb-3"
+     role="group">
+    <i class="border-1 border-secondary database-picker__icon">
+        <svg xmlns="http://www.w3.org/2000/svg"
+             width="16"
+             height="16"
+             fill="currentColor"
+             class="bi bi-database"
+             viewBox="0 0 16 16">
+            <path d="M4.318 2.687C5.234 2.271 6.536 2 8 2s2.766.27 3.682.687C12.644 3.125 13 3.627 13 4c0 .374-.356.875-1.318 1.313C10.766 5.729 9.464 6 8 6s-2.766-.27-3.682-.687C3.356 4.875 3 4.373 3 4c0-.374.356-.875 1.318-1.313ZM13 5.698V7c0 .374-.356.875-1.318 1.313C10.766 8.729 9.464 9 8 9s-2.766-.27-3.682-.687C3.356 7.875 3 7.373 3 7V5.698c.271.202.58.378.904.525C4.978 6.711 6.427 7 8 7s3.022-.289 4.096-.777A4.92 4.92 0 0 0 13 5.698ZM14 4c0-1.007-.875-1.755-1.904-2.223C11.022 1.289 9.573 1 8 1s-3.022.289-4.096.777C2.875 2.245 2 2.993 2 4v9c0 1.007.875 1.755 1.904 2.223C4.978 15.71 6.427 16 8 16s3.022-.289 4.096-.777C13.125 14.755 14 14.007 14 13V4Zm-1 4.698V10c0 .374-.356.875-1.318 1.313C10.766 11.729 9.464 12 8 12s-2.766-.27-3.682-.687C3.356 10.875 3 10.373 3 10V8.698c.271.202.58.378.904.525C4.978 9.71 6.427 10 8 10s3.022-.289 4.096-.777A4.92 4.92 0 0 0 13 8.698Zm0 3V13c0 .374-.356.875-1.318 1.313C10.766 14.729 9.464 15 8 15s-2.766-.27-3.682-.687C3.356 13.875 3 13.373 3 13v-1.302c.271.202.58.378.904.525C4.978 12.71 6.427 13 8 13s3.022-.289 4.096-.777c.324-.147.633-.323.904-.525Z"/>
+        </svg>
+    </i>
+    <button [title]="this.selectedDatabase?.name ?? 'Select database'"
+            data-bs-toggle="dropdown"
+            data-bs-auto-close="outside"
+            data-bs-popper-config='{"placement": "bottom-start", "strategy":"fixed"}'
+            aria-expanded="false"
+            class="btn btn-outline-secondary database-picker__selector rounded-end"
+            #databaseSelector>
+        <span class="database-picker__selector-text">{{this.selectedDatabase?.name ?? "Select database"}}</span>
+        <i class="bi bi-chevron-compact-down ms-auto"></i>
+    </button>
+
+    <ul class="dropdown-menu dropdown-menu-xs database-picker__dropdown">
+        <li>
+            <p class="dropdown-header text-center">Select database</p>
+            <hr class="dropdown-divider my-0">
+        </li>
+        <li>
+            <div class="input-group">
+                <input type="text"
+                       [(ngModel)]="this.databaseSearch"
+                       class="form-control"
+                       placeholder="Search..."
+                       aria-label="Search...">
+                <div class="input-group-append">
+                    <button [disabled]="this.isFetchingInstanceData"
+                            class="btn btn-outline-secondary rounded-0 border-0"
+                            type="button"
+                            (click)="this.getDatabases()">
+                        <i *ngIf="!this.isFetchingInstanceData"
+                           class="bi bi-search">
+                        </i>
+                        <span *ngIf="this.isFetchingInstanceData"
+                              class="spinner-grow spinner-grow-sm"
+                              role="status"
+                              aria-hidden="true">
+                        </span>
+                    </button>
+                </div>
+            </div>
+            <hr class="dropdown-divider mt-0">
+        </li>
+        <li *ngIf="this.databases.length > 0">
+            <button title="Select {{database.name}}"
+                    *ngFor="let database of this.databases"
+                    class="dropdown-item"
+                    (click)="this.selectDatabase(database)">
+                {{database.name}}
+            </button>
+        </li>
+        <li *ngIf="this.databases.length == 0">
+            <p class="dropdown-header text-center">Databases not found...</p>
+        </li>
+        <li>
+            <hr class="dropdown-divider mb-0">
+            <div class="d-flex flex-nowrap">
+                <button [disabled]="this.isFetchingInstanceData || !this.databasesTotalAmount || !this.databasesPerPage || this.databasePage == 0"
+                        class="dropdown-item text-center"
+                        title="Previous page"
+                        (click)="this.databasePage = this.databasePage - 1">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <button [disabled]="this.isFetchingInstanceData || !this.databasesTotalAmount || !this.databasesPerPage || this.databasesTotalAmount! - (this.databasePage + 1) * this.databasesPerPage! <= 0"
+                        class="dropdown-item text-center"
+                        title="Next page"
+                        (click)="this.databasePage = this.databasePage + 1">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+        </li>
+    </ul>
+</div>
+
+<div *ngIf="this.isFetchingInstanceData"
+     class="text-center">
+    <ng-container *ngTemplateOutlet="loader">
+    </ng-container>
+</div>
+
+<div *ngIf="this.selectedDatabase">
+    <ul class="schema">
+        <li class="schema__item"
+            *ngFor="let schema of this.selectedDatabase.schemas">
+            <div class="d-flex flex-nowrap align-items-center">
+                <button (click)="schemaFolder.hidden = !schemaFolder.hidden; this.showSchemaFolder(schema, !schemaFolder.hidden)"
+                        class="schema__item-submenu-opener">
+                    <i [ngClass]="schemaFolder.hidden ? 'bi-chevron-compact-right' : 'bi-chevron-compact-down'"
+                       class="bi">
+                    </i>
+                </button>
+
+                <div class="form-check form-switch ms-1 me-1 mb-0">
+                    <input class="form-check-input cursor-pointer"
+                           id="{{schema.name}}-checkbox"
+                           type="checkbox"
+                           (change)="this.onCheckboxSelectSchema(schema, $event)"
+                           [defaultChecked]="this.isSelectedSchema(schema)"
+                           role="switch"
+                           title="Load schema objects">
+                </div>
+
+                <i class="bi bi-diagram-2 schema__item-icon schema__item-icon--xl"
+                   title="Schema">
+                </i>
+
+                <span copied
+                      class="schema__item-name">
+                    {{schema.name}}
+                </span>
+            </div>
+
+            <ul #schemaFolder
+                hidden>
+                <li class="schema__item">
+                    <div class="d-flex flex-nowrap align-items-center">
+                        <button (click)="this.loadTables(schema, tables.hidden); tables.hidden = !tables.hidden"
+                                class="schema__item-submenu-opener">
+                            <i [ngClass]="tables.hidden ? 'bi-chevron-compact-right' : 'bi-chevron-compact-down'"
+                               class="bi">
+                            </i>
+                        </button>
+
+                        <i class="bi bi-folder schema__item-icon"></i>
+
+                        <span copied
+                              class="schema__item-name">
+                            Tables
+                        </span>
+                    </div>
+                    <ul #tables
+                        hidden>
+
+                        <ng-container *ngIf="schema.tables; else loader">
+                            <li *ngFor="let table of schema.tables;"
+                                class="schema__item">
+                                <div class="d-flex flex-nowrap align-items-center">
+                                    <div class="btn-group me-1">
+                                        <button class="btn btn-outline-secondary btn-sm p-0 rounded-1 lh-1"
+                                                type="button"
+                                                title="Open actionbar"
+                                                data-bs-toggle="dropdown"
+                                                data-bs-popper-config='{"placement": "left", "strategy":"fixed"}'
+                                                aria-expanded="false">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                 width="12"
+                                                 height="16"
+                                                 fill="currentColor"
+                                                 class="bi bi-three-dots-vertical"
+                                                 viewBox="0 0 16 16">
+                                                <path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>
+                                            </svg>
+                                        </button>
+
+                                        <ul class="dropdown-menu dropdown-menu-xs dropstart p-0 m-0 table-dropdown">
+                                            <fieldset [disabled]="this.isFetchingInstanceData">
+                                                <li>
+                                                    <p class="dropdown-header pb-0 text-center">Action bar</p>
+                                                    <hr class="dropdown-divider">
+                                                </li>
+                                                <li>
+                                                    <button class="dropdown-item"
+                                                            (click)="this.viewTable(schema!.name!, table!.name!, false)">
+                                                        Select
+                                                    </button>
+                                                </li>
+                                                <li>
+                                                    <button class="dropdown-item"
+                                                            (click)="this.viewTable(schema!.name!, table!.name!, true)">
+                                                        Select at new tab
+                                                    </button>
+                                                </li>
+                                                <li>
+                                                    <button class="dropdown-item"
+                                                            (click)="this.viewRowCount(schema!.name!, table!.name!, false)">
+                                                        Count
+                                                    </button>
+                                                </li>
+                                                <li>
+                                                    <button class="dropdown-item"
+                                                            (click)="this.viewRowCount(schema!.name!, table!.name!, true)">
+                                                        Count at new tab
+                                                    </button>
+                                                </li>
+                                            </fieldset>
+
+                                            <li>
+                                                <hr class="dropdown-divider">
+                                                <p class="dropdown-header py-0 text-center">Templates</p>
+                                                <hr class="dropdown-divider">
+                                            </li>
+                                            <li>
+                                                <button class="dropdown-item"
+                                                        (click)="this.addSelectTemplate(schema!.name!, table!.name!)">
+                                                    Select rows
+                                                </button>
+                                            </li>
+                                            <li>
+                                                <button class="dropdown-item"
+                                                        (click)="this.addUpdateTemplate(schema!.name!, table!.name!)">
+                                                    Update rows
+                                                </button>
+                                            </li>
+                                            <li>
+                                                <button class="dropdown-item"
+                                                        (click)="this.addInsertTemplate(schema!.name!, table!.name!)">
+                                                    Insert rows
+                                                </button>
+                                            </li>
+                                            <li>
+                                                <button class="dropdown-item"
+                                                        (click)="this.addDeleteTemplate(schema!.name!, table!.name!)">
+                                                    Delete rows
+                                                </button>
+                                            </li>
+                                        </ul>
+                                    </div>
+
+                                    <button (click)="this.loadTableColumns(schema, table, columns.hidden); columns.hidden = !columns.hidden"
+                                            class="schema__item-submenu-opener">
+                                        <i [ngClass]="columns.hidden ? 'bi-chevron-compact-right' : 'bi-chevron-compact-down'"
+                                           class="bi">
+                                        </i>
+                                    </button>
+
+                                    <i class="bi bi-table schema__item-icon"
+                                       title="Table"></i>
+                                    <span copied
+                                          class="schema__item-name">
+                                            {{table.name}}
+                                    </span>
+                                </div>
+
+                                <ul #columns
+                                    hidden>
+                                    <li class="schema__item">
+                                        <button (click)="submenu2.hidden = !submenu2.hidden"
+                                                class="schema__item-submenu-opener">
+                                            <i [ngClass]="submenu2.hidden ? 'bi-chevron-compact-right' : 'bi-chevron-compact-down'"
+                                               class="bi">
+                                            </i>
+                                        </button>
+                                        <i class="bi bi-folder schema__item-icon"></i>
+                                        <span class="schema__item-name">
+                                            Columns
+                                            <span *ngIf="!table.columns"
+                                                  class="spinner-grow spinner-grow-sm"
+                                                  role="status"
+                                                  aria-hidden="true">
+                                            </span>
+                                        </span>
+
+                                        <ul #submenu2
+                                            hidden>
+                                            <li *ngIf="table.columns?.length == 0">
+                                                <span class="text-secondary">There are no columns.</span>
+                                            </li>
+                                            <li *ngFor="let column of table.columns"
+                                                class="schema__item">
+                                                <i class="bi bi-layout-sidebar-inset schema__item-icon"
+                                                   title="Column"></i>
+                                                <span class="schema__item-name">
+                                                        <span copied>{{column.name}}</span>
+                                                    </span>
+                                                <i *ngIf="column.isPrimaryKey"
+                                                   class="bi bi-key-fill schema__item-icon color-pk ms-2"
+                                                   title="PRIMARY KEY">
+                                                </i>
+                                                <i *ngIf="column.isForeignKey"
+                                                   class="bi bi-key-fill schema__item-icon color-fk ms-2"
+                                                   title="FOREIGN KEY">
+                                                </i>
+                                                <span> - </span>
+                                                <span class="schema__item-type text-secondary">
+                                                            {{this.getColumnAdditionalInfo(column)}}
+                                                    </span>
+                                                <span *ngIf="column.defaultValue"> - </span>
+                                                <span *ngIf="column.defaultValue"
+                                                      class="schema__item-type text-secondary">
+                                                            {{column.defaultValue}}
+                                                    </span>
+                                            </li>
+                                        </ul>
+                                    </li>
+
+                                    <li class="schema__item">
+                                        <button (click)="constraints.hidden = !constraints.hidden"
+                                                [disabled]="!table.constraints"
+                                                class="schema__item-submenu-opener">
+                                            <i [ngClass]="constraints.hidden ? 'bi-chevron-compact-right' : 'bi-chevron-compact-down'"
+                                               class="bi">
+                                            </i>
+                                        </button>
+                                        <i class="bi bi-folder schema__item-icon"></i>
+                                        <span class="schema__item-name">
+                                            Constraints
+                                            <span *ngIf="!table.constraints"
+                                                  class="spinner-grow spinner-grow-sm"
+                                                  role="status"
+                                                  aria-hidden="true"></span>
+                                        </span>
+
+                                        <ul #constraints
+                                            hidden>
+                                            <li *ngIf="table.constraints?.length == 0">
+                                                <span class="text-secondary">There are no constraints.</span>
+                                            </li>
+                                            <li *ngFor="let constraint of table.constraints"
+                                                class="schema__item">
+
+                                                <span title="{{constraint.type}}"
+                                                      class="badge rounded-pill schema__badge text-secondary me-2 cursor-default">
+                                                    <svg *ngIf="constraint.type == 'FOREIGN KEY'"
+                                                         xmlns="http://www.w3.org/2000/svg"
+                                                         width="16"
+                                                         height="16"
+                                                         fill="currentColor"
+                                                         class="bi bi-key-fill color-fk"
+                                                         viewBox="0 0 16 16">
+                                                        <path d="M3.5 11.5a3.5 3.5 0 1 1 3.163-5H14L15.5 8 14 9.5l-1-1-1 1-1-1-1 1-1-1-1 1H6.663a3.5 3.5 0 0 1-3.163 2zM2.5 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+                                                    </svg>
+                                                    <svg *ngIf="constraint.type == 'PRIMARY KEY'"
+                                                         xmlns="http://www.w3.org/2000/svg"
+                                                         width="16"
+                                                         height="16"
+                                                         fill="currentColor"
+                                                         class="bi bi-key-fill color-pk"
+                                                         viewBox="0 0 16 16">
+                                                        <path d="M3.5 11.5a3.5 3.5 0 1 1 3.163-5H14L15.5 8 14 9.5l-1-1-1 1-1-1-1 1-1-1-1 1H6.663a3.5 3.5 0 0 1-3.163 2zM2.5 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+                                                    </svg>
+                                                    <span *ngIf="constraint.type != 'FOREIGN KEY' && constraint.type != 'PRIMARY KEY'">
+                                                        {{constraint.type![0]}}
+                                                    </span>
+                                                </span>
+
+                                                <span class="schema__item-name">
+                                                    <span copied>{{constraint.name}}</span>
+                                                </span>
+                                                <span *ngIf="constraint.sourceTable?.length && constraint.sourceColumn?.length"
+                                                      class="schema__item-description text-secondary">
+                                                    <span>
+                                                        -
+                                                    </span>
+
+                                                    <span>
+                                                        {{constraint.sourceTable}}.{{constraint.sourceColumn}}
+                                                    </span>
+
+                                                    <span *ngIf="constraint.targetTable?.length && constraint.targetColumn?.length">
+                                                        <i class="bi bi-arrow-right"></i>
+                                                        {{constraint.targetTable}}.{{constraint.targetColumn}}
+                                                    </span>
+                                                </span>
+                                            </li>
+                                        </ul>
+                                    </li>
+
+                                    <li class="schema__item">
+                                        <button (click)="indexes.hidden = !indexes.hidden"
+                                                [disabled]="!table.indexes"
+                                                class="schema__item-submenu-opener">
+                                            <i [ngClass]="indexes.hidden ? 'bi-chevron-compact-right' : 'bi-chevron-compact-down'"
+                                               class="bi">
+                                            </i>
+                                        </button>
+                                        <i class="bi bi-folder schema__item-icon"></i>
+                                        <span class="schema__item-name">
+                                            Indexes
+                                            <span *ngIf="!table.indexes"
+                                                  class="spinner-grow spinner-grow-sm"
+                                                  role="status"
+                                                  aria-hidden="true"></span>
+                                        </span>
+
+                                        <ul #indexes
+                                            hidden>
+                                            <li *ngIf="table.indexes?.length == 0">
+                                                <span class="text-secondary">There are no indexes.</span>
+                                            </li>
+                                            <li *ngFor="let index of table.indexes"
+                                                class="schema__item">
+
+                                                <span title="Index"
+                                                      class="badge rounded-pill schema__badge text-secondary me-2 cursor-default">
+                                                    I
+                                                </span>
+
+                                                <span class="schema__item-name">
+                                                    <span copied>{{index.name}}</span>
+                                                </span>
+                                            </li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ng-container>
+                    </ul>
+                </li>
+                <li class="schema__item">
+                    <div class="d-flex flex-nowrap align-items-center">
+                        <button (click)="this.loadViews(schema, views.hidden); views.hidden = !views.hidden"
+                                class="schema__item-submenu-opener">
+                            <i [ngClass]="views.hidden ? 'bi-chevron-compact-right' : 'bi-chevron-compact-down'"
+                               class="bi">
+                            </i>
+                        </button>
+
+                        <i class="bi bi-folder schema__item-icon"></i>
+
+                        <span copied
+                              class="schema__item-name">
+                            Views
+                        </span>
+                    </div>
+                    <ul #views
+                        hidden>
+                        <ng-container *ngIf="schema.views; else loader">
+                            <li *ngFor="let view of schema.views;"
+                                class="schema__item">
+                                <div class="d-flex flex-nowrap align-items-center">
+                                    <div class="btn-group me-1">
+                                        <button class="btn btn-outline-secondary btn-sm p-0 rounded-1 lh-1"
+                                                type="button"
+                                                title="Open actionbar"
+                                                data-bs-toggle="dropdown"
+                                                data-bs-popper-config='{"placement": "left", "strategy":"fixed"}'
+                                                aria-expanded="false">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                 width="12"
+                                                 height="16"
+                                                 fill="currentColor"
+                                                 class="bi bi-three-dots-vertical"
+                                                 viewBox="0 0 16 16">
+                                                <path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>
+                                            </svg>
+                                        </button>
+
+                                        <ul class="dropdown-menu dropdown-menu-xs dropstart p-0 m-0 table-dropdown">
+                                            <fieldset [disabled]="this.isFetchingInstanceData">
+                                                <li>
+                                                    <p class="dropdown-header pb-0 text-center">Action bar</p>
+                                                    <hr class="dropdown-divider">
+                                                </li>
+                                                <li>
+                                                    <button class="dropdown-item"
+                                                            (click)="this.viewTable(schema!.name!, view!.name!, false)">
+                                                        Select
+                                                    </button>
+                                                </li>
+                                                <li>
+                                                    <button class="dropdown-item"
+                                                            (click)="this.viewTable(schema!.name!, view!.name!, true)">
+                                                        Select at new tab
+                                                    </button>
+                                                </li>
+                                                <li>
+                                                    <button class="dropdown-item"
+                                                            (click)="this.viewRowCount(schema!.name!, view!.name!, false)">
+                                                        Count
+                                                    </button>
+                                                </li>
+                                                <li>
+                                                    <button class="dropdown-item"
+                                                            (click)="this.viewRowCount(schema!.name!, view!.name!, true)">
+                                                        Count at new tab
+                                                    </button>
+                                                </li>
+                                            </fieldset>
+                                        </ul>
+                                    </div>
+
+                                    <button (click)="this.loadViewColumns(schema, view, columns.hidden); columns.hidden = !columns.hidden"
+                                            class="schema__item-submenu-opener">
+                                        <i [ngClass]="columns.hidden ? 'bi-chevron-compact-right' : 'bi-chevron-compact-down'"
+                                           class="bi">
+                                        </i>
+                                    </button>
+
+                                    <i class="bi bi-table schema__item-icon"
+                                       title="View"></i>
+                                    <span copied
+                                          class="schema__item-name">
+                                            {{view.name}}
+                                    </span>
+                                </div>
+
+                                <ul #columns
+                                    hidden>
+                                    <ng-container *ngIf="view.columns; else loader">
+                                        <li class="schema__item">
+                                            <button (click)="submenu2.hidden = !submenu2.hidden"
+                                                    class="schema__item-submenu-opener">
+                                                <i [ngClass]="submenu2.hidden ? 'bi-chevron-compact-right' : 'bi-chevron-compact-down'"
+                                                   class="bi">
+                                                </i>
+                                            </button>
+                                            <i class="bi bi-folder schema__item-icon"></i>
+                                            <span class="schema__item-name">Columns</span>
+
+                                            <ul #submenu2
+                                                hidden>
+                                                <li *ngFor="let column of view.columns"
+                                                    class="schema__item">
+                                                    <i class="bi bi-layout-sidebar-inset schema__item-icon"></i>
+                                                    <span class="schema__item-name">
+                                                            <span copied>{{column.name}}</span>
+                                                    </span>
+                                                    <span> - </span>
+                                                    <span class="schema__item-type text-secondary">
+                                                            {{this.getColumnAdditionalInfo(column)}}
+                                                    </span>
+                                                    <span *ngIf="column.defaultValue"> - </span>
+                                                    <span *ngIf="column.defaultValue"
+                                                          class="schema__item-type text-secondary">
+                                                            {{column.defaultValue}}
+                                                    </span>
+                                                </li>
+                                            </ul>
+                                        </li>
+                                    </ng-container>
+                                </ul>
+                            </li>
+                        </ng-container>
+                    </ul>
+                </li>
+                <li class="schema__item">
+                    <div class="d-flex flex-nowrap align-items-center">
+                        <button (click)="this.loadRoutines(schema, routines.hidden); routines.hidden = !routines.hidden"
+                                class="schema__item-submenu-opener">
+                            <i [ngClass]="routines.hidden ? 'bi-chevron-compact-right' : 'bi-chevron-compact-down'"
+                               class="bi">
+                            </i>
+                        </button>
+
+                        <i class="bi bi-folder schema__item-icon"></i>
+
+                        <span copied
+                              class="schema__item-name">
+                            Routines
+                        </span>
+                    </div>
+                    <ul #routines
+                        hidden>
+                        <ng-container *ngIf="schema.routines; else loader">
+                            <li *ngFor="let routine of schema.routines;"
+                                class="schema__item">
+                                <div class="d-flex flex-nowrap align-items-center">
+                                    <span title="{{routine.type}}"
+                                          class="badge rounded-pill schema__badge text-secondary me-2 cursor-default">
+                                        {{routine.type?.length ? routine.type![0] : ''}}
+                                    </span>
+
+                                    <span copied
+                                          class="schema__item-name">
+                                            {{routine.name}}
+                                    </span>
+                                </div>
+                            </li>
+                        </ng-container>
+                    </ul>
+                </li>
+            </ul>
+        </li>
+    </ul>
+
+    <p *ngIf="!this.selectedSchemas.length"
+       class="text-secondary fst-italic font-size-08rem">
+        * Select the schemas to be used in the editor's autocomplete and import plugins.
+    </p>
+
+</div>
+
+<ng-template #loader>
+    <div class="d-flex justify-content-center">
+        <div class="spinner-grow"
+             role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+    </div>
+</ng-template>

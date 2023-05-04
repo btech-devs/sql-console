@@ -17,7 +17,7 @@ public class MsSqlConnector : ConnectorBase
 
     public override SqlConnection Connection { get; }
 
-    public override DbCommand CreateCommand(string sql) => new SqlCommand(sql, this.Connection);
+    public override DbCommand CreateCommand(string sql = null) => new SqlCommand(sql, this.Connection);
 
     protected override bool NeedQuotes(string postgresTypeName)
     {

@@ -1,5 +1,3 @@
-import {QueryColumn} from '../query/queryColumn.model';
-
 export class Column {
     private _name?: string;
     private _defaultValue?: string;
