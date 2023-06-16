@@ -8,6 +8,10 @@ import {AlertStorage, getTransitionAnimation} from '../../../../utils';
 
 declare var $: any;
 
+/**
+ * Component responsible for handling SQL file imports and displaying progress and response.
+ * @implements {AfterViewInit}
+ */
 @Component({
     selector: 'app-sql-importer',
     animations: [getTransitionAnimation()],
@@ -29,50 +33,90 @@ export class SqlImporterComponent implements AfterViewInit {
     private _error?: string;
     private _showProgress: boolean = false;
 
+    /**
+     * Gets the value indicating whether a file is being dragged over the component.
+     * @returns {boolean} The value indicating whether a file is being dragged over the component.
+     */
     get isDragover(): boolean {
         return this._isDragover;
     }
 
+    /**
+     * Gets the value indicating whether to show the progress bar.
+     * @returns {boolean} The value indicating whether to show the progress bar.
+     */
     get showProgress(): boolean {
         return this._showProgress;
     }
 
+    /**
+     * Gets the value indicating whether the import request has been sent.
+     * @returns {boolean} The value indicating whether the import request has been sent.
+     */
     get isSent(): boolean {
         return this._isSent;
     }
 
+    /**
+     * Gets the error message in case of an import error.
+     * @returns {string | undefined} The error message in case of an import error.
+     */
     get error(): string | undefined {
         return this._error;
     }
 
+    /**
+     * Gets the selected file for import.
+     * @returns {File | undefined} The selected file for import.
+     */
     get file(): File | undefined {
         return this._file;
     }
 
+    /**
+     * Gets the number of bytes loaded during the import process.
+     * @returns {number | undefined} The number of bytes loaded during the import process.
+     */
     get loaded(): number | undefined {
         return this._loaded;
     }
 
+    /**
+     * Gets the total size of the file being imported.
+     * @returns {number | undefined} The total size of the file being imported.
+     */
     get total(): number | undefined {
         return this._total;
     }
 
+    /**
+     * Gets the response received from the import request.
+     * @returns {Response<Query> | undefined} The response received from the import request.
+     */
     get response(): Response<Query> | undefined {
         return this._response;
     }
 
+    /**
+     * Gets the value indicating whether an import operation is in progress.
+     * @returns {boolean} The value indicating whether an import operation is in progress.
+     */
     get isImporting(): boolean {
         return this._isImporting;
     }
 
+    /**
+     * Sets the database to import the SQL file into.
+     * @param {string | undefined} value - The database to import the SQL file into.
+     */
     @Input('database') set database(value: string | undefined) {
         this._database = value;
     }
 
-    set showProgress(value: boolean) {
-        this._showProgress = value;
-    }
-
+    /**
+     * Sets the selected file for import.
+     * @param {File | undefined} value - The selected file for import.
+     */
     set file(value: File | undefined) {
         const allowedFileExtensions: string[] = ['sql', 'pgsql', 'psql'];
 
@@ -87,6 +131,10 @@ export class SqlImporterComponent implements AfterViewInit {
         }
     }
 
+    /**
+     * The modal element reference.
+     * @type {ElementRef}
+     */
     @ViewChild('modal') modal!: ElementRef;
 
     ngAfterViewInit(): void {
@@ -99,11 +147,17 @@ export class SqlImporterComponent implements AfterViewInit {
         });
     }
 
+    /**
+     * Opens the modal dialog.
+     */
     openModal() {
         this._showProgress = false;
         $(this.modal.nativeElement).modal('show');
     }
 
+    /**
+     * Shows the modal dialog.
+     */
     show() {
         if (!this.isImporting) {
             this.reset();
@@ -112,6 +166,10 @@ export class SqlImporterComponent implements AfterViewInit {
         this.openModal();
     }
 
+    /**
+     * Event listener for the dragover event on the window.
+     * @param {DragEvent} event - The drag event.
+     */
     @HostListener('window:dragover', ['$event'])
     onDragover(event: DragEvent) {
         event.preventDefault();
@@ -119,6 +177,10 @@ export class SqlImporterComponent implements AfterViewInit {
         this._isDragover = true;
     }
 
+    /**
+     * Event listener for the drop event on the window.
+     * @param {DragEvent} event - The drop event.
+     */
     @HostListener('window:drop', ['$event'])
     onDrop(event: DragEvent) {
         event.preventDefault();
@@ -130,6 +192,9 @@ export class SqlImporterComponent implements AfterViewInit {
         }
     }
 
+    /**
+     * Resets the component state.
+     */
     reset() {
         if (!this._isImporting) {
             this._file = undefined;
@@ -143,6 +208,9 @@ export class SqlImporterComponent implements AfterViewInit {
         }
     }
 
+    /**
+     * Imports the selected SQL file.
+     */
     import() {
         this._error = undefined;
         this._isSent = false;

@@ -18,6 +18,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Btech.Sql.Console.Controllers;
 
+/// <summary>
+/// Controller for handling SQL queries.
+/// </summary>
 [Controller]
 [Route("api/query")]
 public class QueryController : SessionRelatedControllerBase
@@ -31,6 +34,12 @@ public class QueryController : SessionRelatedControllerBase
 
     private IConnectorFactory ConnectorFactory { get; }
 
+    /// <summary>
+    /// Executes a SQL query against the specified database.
+    /// </summary>
+    /// <param name="database">The name of the database to execute the query against.</param>
+    /// <param name="queryExecuteRequest">The request object containing the SQL query to execute.</param>
+    /// <returns>A response object containing the results of the query execution.</returns>
     [HttpPost("execute/{database}")]
     [ValidateModel]
     public async Task<Response<Query>> ExecuteAsync([FromRoute] string database, [FromBody] QueryExecuteRequest queryExecuteRequest)
@@ -99,6 +108,11 @@ public class QueryController : SessionRelatedControllerBase
         return queryResponse;
     }
 
+    /// <summary>
+    /// Executes a SQL query on the specified database and returns the result as a delimited separated values (DSV) file.
+    /// </summary>
+    /// <param name="database">The name of the database to execute the query on.</param>
+    /// <param name="queryExecuteDsvRequest">The request containing the SQL query and DSV formatting options.</param>
     [HttpPost("execute/{database}/dsv")]
     [ValidateModel]
     public async Task ExecuteDsvAsync([FromRoute] string database, [FromBody] QueryExecuteDsvRequest queryExecuteDsvRequest)
@@ -218,6 +232,12 @@ public class QueryController : SessionRelatedControllerBase
         this.LogDebug("Close connection.");
     }
 
+    /// <summary>
+    /// Imports an SQL file to the specified database.
+    /// </summary>
+    /// <param name="database">The name of the database to import the file to.</param>
+    /// <param name="file">The SQL file to import.</param>
+    /// <returns>A response containing information about the imported data.</returns>
     [HttpPost("import/{database}/sql"), DisableRequestSizeLimit]
     public async Task<Response<Query>> ImportSqlAsync(
         [FromRoute] string database,
@@ -287,6 +307,13 @@ public class QueryController : SessionRelatedControllerBase
         return response;
     }
 
+    /// <summary>
+    /// Imports data from a DSV file into a database table.
+    /// </summary>
+    /// <param name="database">The name of the database.</param>
+    /// <param name="tableName">The name of the table where data will be imported.</param>
+    /// <param name="request">The request containing the DSV file and import options.</param>
+    /// <returns>A response object containing information about the import operation.</returns>
     [HttpPost("import/{database}/dsv/{tableName}"), DisableRequestSizeLimit]
     public async Task<Response<Query>> ImportDsvAsync(
         [FromRoute] string database,

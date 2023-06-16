@@ -10,7 +10,15 @@ import {AbstractControl, FormControl, FormGroup, ValidationErrors, ValidatorFn, 
 
 declare var $: any;
 
+/**
+ * Represents the ViewModel for the table schema, which includes the table information and its schema.
+ */
 type TableSchemaViewModel = Table & { schema: string };
+
+/**
+ * Represents the DsvImporterComponent class.
+ * This component is responsible for importing DSV (Delimiter-Separated Values) files into a database.
+ */
 @Component({
     selector: 'app-dsv-importer',
     animations: [getTransitionAnimation()],
@@ -36,62 +44,102 @@ export class DsvImporterComponent implements OnInit, AfterViewInit {
     private _form!: FormGroup;
     private _tableSearch: string = '';
 
+    /**
+     * Gets or sets the table search query.
+     */
     get tableSearch(): string {
         return this._tableSearch;
     }
 
-    set tableSearch(value: string) {
-        this._tableSearch = value;
-    }
-
+    /**
+     * Gets the flag indicating whether a file is being dragged over the component.
+     */
     get isDragover(): boolean {
         return this._isDragover;
     }
 
+    /**
+     * Gets the form group used for the DSV import configuration.
+     */
     get form(): FormGroup {
         return this._form;
     }
 
+    /**
+     * Gets the flag indicating whether the progress bar should be shown.
+     */
     get showProgress(): boolean {
         return this._showProgress;
     }
 
+    /**
+     * Gets the flag indicating whether the DSV import process has been initiated.
+     */
     get isSent(): boolean {
         return this._isSent;
     }
 
+    /**
+     * Gets the error message occurred during the DSV import process, if any.
+     */
     get error(): string | undefined {
         return this._error;
     }
 
+    /**
+     * Gets or sets the file to be imported.
+     */
     get file(): File | undefined {
         return this._file;
     }
 
+    /**
+     * Gets the number of bytes loaded during the import process.
+     */
     get loaded(): number | undefined {
         return this._loaded;
     }
 
+    /**
+     * Gets the total number of bytes to be loaded during the import process.
+     */
     get total(): number | undefined {
         return this._total;
     }
 
+    /**
+     * Gets the response object received after completing the DSV import process.
+     */
     get response(): Response<Query> | undefined {
         return this._response;
     }
 
+    /**
+     * Gets the flag indicating whether a DSV import process is currently in progress.
+     */
     get isImporting(): boolean {
         return this._isImporting;
     }
 
+    /**
+     * Gets the list of supported separators for the DSV file.
+     */
     get separators() {
         return separators;
     }
 
+    /**
+     * Gets or sets the list of tables available in the database.
+     * @param value The list of table schema view models.
+     */
     get tableList(): TableSchemaViewModel[] | undefined {
         return this._tableList;
     }
 
+    /**
+     * Sets the database name for the DSV import process.
+     * @param value The name of the database.
+     */
     @Input('database') set database(value: string | undefined) {
         this._database = value;
     }
@@ -114,8 +162,17 @@ export class DsvImporterComponent implements OnInit, AfterViewInit {
         }
     }
 
+    /**
+     * ViewChild decorator to get a reference to the modal element in the component's template.
+     */
     @ViewChild('modal') modal!: ElementRef;
 
+    /**
+     * Creates a validator function for checking if a number falls within a specified range.
+     * @param min The minimum value of the range.
+     * @param max The maximum value of the range.
+     * @returns A validator function for the number range.
+     */
     private numberRangeValidator(min: number, max: number): ValidatorFn {
         return (control: AbstractControl): ValidationErrors | null => {
             let validationError: string | null = null;
@@ -131,6 +188,10 @@ export class DsvImporterComponent implements OnInit, AfterViewInit {
         };
     }
 
+    /**
+     * Converts the value of a control to a valid number by removing non-numeric characters.
+     * @param control The form control to convert.
+     */
     numberOnly(control?: AbstractControl) {
         if (control) {
             let value: string = control.value?.toString();
@@ -172,11 +233,18 @@ export class DsvImporterComponent implements OnInit, AfterViewInit {
         });
     }
 
+    /**
+     * Opens the modal dialog for the DSV importer.
+     */
     openModal() {
         this._showProgress = false;
         $(this.modal.nativeElement).modal('show');
     }
 
+    /**
+     * Shows the DSV importer modal dialog.
+     * If an import process is not in progress, resets the form and other properties.
+     */
     show() {
         if (!this.isImporting) {
             this.reset();
@@ -185,6 +253,10 @@ export class DsvImporterComponent implements OnInit, AfterViewInit {
         this.openModal();
     }
 
+    /**
+     * Event listener for the 'dragover' event on the window.
+     * @param event The drag event.
+     */
     @HostListener('window:dragover', ['$event'])
     onDragover(event: DragEvent) {
         event.preventDefault();
@@ -192,6 +264,10 @@ export class DsvImporterComponent implements OnInit, AfterViewInit {
         this._isDragover = true;
     }
 
+    /**
+     * Event listener for the 'drop' event on the window.
+     * @param event The drop event.
+     */
     @HostListener('window:drop', ['$event'])
     onDrop(event: DragEvent) {
         event.preventDefault();
@@ -203,6 +279,9 @@ export class DsvImporterComponent implements OnInit, AfterViewInit {
         }
     }
 
+    /**
+     * Resets the form and other properties of the DSV importer component.
+     */
     reset() {
         if (!this._isImporting) {
             this._file = undefined;
@@ -218,6 +297,10 @@ export class DsvImporterComponent implements OnInit, AfterViewInit {
         }
     }
 
+    /**
+     * Initiates the DSV import process.
+     * Sends the DSV file and import configuration to the server.
+     */
     import() {
         this._error = undefined;
         this._isSent = false;
@@ -277,14 +360,30 @@ export class DsvImporterComponent implements OnInit, AfterViewInit {
                 });
     }
 
+    /**
+     * Event handler for the search input in the DSV importer.
+     * Updates the table search value based on the input value.
+     *
+     * @param event - The input event object.
+     */
     onSearchInput(event: any): void {
         this._tableSearch = event.target.value;
     }
 
+    /**
+     * Selects a table in the form control.
+     *
+     * @param table - The table to be selected.
+     */
     onSelectTable(table: TableSchemaViewModel) {
         this.form.controls.table.setValue(table);
     }
 
+    /**
+     * Applies a filter to the table list based on the table search value.
+     *
+     * @returns An array of TableSchemaViewModel objects that match the filter criteria.
+     */
     applyFilter(): TableSchemaViewModel[] {
         return this._tableList
             ?.filter(table =>

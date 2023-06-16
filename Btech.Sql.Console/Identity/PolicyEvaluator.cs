@@ -112,7 +112,7 @@ public sealed class PolicyEvaluator : IPolicyEvaluator
 
             static AuthenticateResult DefaultAuthenticateResult(HttpContext context)
             {
-                return context.User?.Identity?.IsAuthenticated ?? false
+                return context.User.Identity?.IsAuthenticated ?? false
                     ? AuthenticateResult.Success(new AuthenticationTicket(context.User, "context.User"))
                     : AuthenticateResult.NoResult();
             }

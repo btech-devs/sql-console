@@ -5,10 +5,18 @@ using Btech.Sql.Console.Services;
 using Google.Cloud.SecretManager.V1;
 using Newtonsoft.Json;
 
-namespace Btech.Sql.Console.DataStorages;
+namespace Btech.Sql.Console.DataStorages.Session;
 
+/// <summary>
+/// Implementation of ISessionStorage interface that uses Google Cloud Secret Manager to store session data.
+/// </summary>
 public sealed class GoogleCloudSecretManagerSessionStorage : ISessionStorage<SessionData>
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GoogleCloudSecretManagerSessionStorage"/> class.
+    /// </summary>
+    /// <param name="logger">The instance of ILogger to be used.</param>
+    /// <param name="service">The instance of GoogleCloudSecretManagerService to be used.</param>
     public GoogleCloudSecretManagerSessionStorage(
         ILogger<GoogleCloudSecretManagerSessionStorage> logger,
         GoogleCloudSecretManagerService service)
@@ -20,6 +28,7 @@ public sealed class GoogleCloudSecretManagerSessionStorage : ISessionStorage<Ses
     private ILogger Logger { get; }
     private GoogleCloudSecretManagerService SecretManagerService { get; }
 
+    /// <inheritdoc />
     public async Task<bool> SaveAsync(string email, SessionData data)
     {
         SecretVersion secretVersion = null;
@@ -54,6 +63,7 @@ public sealed class GoogleCloudSecretManagerSessionStorage : ISessionStorage<Ses
         return true;
     }
 
+    /// <inheritdoc />
     public async Task<bool> UpdateAsync(string email, SessionData updatedSessionData)
     {
         bool result = await this.DeleteAsync(email);
@@ -66,6 +76,7 @@ public sealed class GoogleCloudSecretManagerSessionStorage : ISessionStorage<Ses
         return result;
     }
 
+    /// <inheritdoc />
     public async Task<bool> DeleteAsync(string email)
     {
         await this.SecretManagerService
@@ -74,6 +85,7 @@ public sealed class GoogleCloudSecretManagerSessionStorage : ISessionStorage<Ses
         return true;
     }
 
+    /// <inheritdoc />
     public async Task<SessionData> GetAsync(string email)
     {
         SessionData deserialized = null;

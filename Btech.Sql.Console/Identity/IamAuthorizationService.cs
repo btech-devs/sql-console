@@ -10,10 +10,17 @@ using Google.Apis.Services;
 
 namespace Btech.Sql.Console.Identity;
 
+/// <summary>
+/// Provides functionality to authorize IAM policies.
+/// </summary>
 public class IamAuthorizationService
 {
-    public IamAuthorizationService(
-        ILogger<IamAuthorizationService> logger, IamAuthorizationServiceConfiguration config)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="IamAuthorizationService"/> class.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="config">The IAM authorization service configuration.</param>
+    public IamAuthorizationService(ILogger<IamAuthorizationService> logger, IamAuthorizationServiceConfiguration config)
     {
         this.Logger = logger;
         this.Config = config;
@@ -147,16 +154,18 @@ public class IamAuthorizationService
     {
         UserRole role = UserRole.None;
 
-        if (userRoles.Any(binding =>
-                binding.Role is
-                    Constants.Identity.IamServiceRoleNames.CloudSqlAdmin or
-                    Constants.Identity.IamServiceRoleNames.Owner))
+        if (userRoles.Any(
+                binding =>
+                    binding.Role is
+                        Constants.Identity.IamServiceRoleNames.CloudSqlAdmin or
+                        Constants.Identity.IamServiceRoleNames.Owner))
         {
             role = UserRole.Admin;
         }
-        else if (userRoles.Any(binding => binding.Role is
-                     Constants.Identity.IamServiceRoleNames.CloudSqlEditor or
-                     Constants.Identity.IamServiceRoleNames.Editor))
+        else if (userRoles.Any(
+                     binding => binding.Role is
+                         Constants.Identity.IamServiceRoleNames.CloudSqlEditor or
+                         Constants.Identity.IamServiceRoleNames.Editor))
         {
             role = UserRole.Editor;
         }
@@ -168,6 +177,11 @@ public class IamAuthorizationService
         return role;
     }
 
+    /// <summary>
+    /// Determines whether the specified user is allowed access to the Cloud SQL instance.
+    /// </summary>
+    /// <param name="userEmail">The email address of the user to check.</param>
+    /// <returns>A tuple containing a flag indicating whether the user is allowed, a flag indicating whether the check succeeded, and the user's role if the check succeeded.</returns>
     public async Task<(bool Succeeded, bool Allowed, UserRole role)> IsAllowedUserAsync(string userEmail)
     {
         bool isAllowed = false;

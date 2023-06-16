@@ -12,10 +12,18 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Btech.Sql.Console.Controllers;
 
+/// <summary>
+/// Represents a controller that handles requests related to databases, and requires user and session authorization.
+/// </summary>
 [Controller]
 [Route("/api/databases")]
 public class DatabaseController : SessionRelatedControllerBase
 {
+    /// <summary>
+    /// Constructs a new instance of the <see cref="DatabaseController"/> class with the specified logger and connector factory.
+    /// </summary>
+    /// <param name="logger">An instance of the logger for the controller.</param>
+    /// <param name="connectorFactory">An instance of the connector factory to use for creating database connectors.</param>
     public DatabaseController(
         ILogger<DatabaseController> logger, IConnectorFactory connectorFactory)
         : base(logger)
@@ -25,6 +33,13 @@ public class DatabaseController : SessionRelatedControllerBase
 
     private IConnectorFactory ConnectorFactory { get; }
 
+    /// <summary>
+    /// Retrieves a paginated list of databases filtered by the specified search term.
+    /// </summary>
+    /// <param name="page">The page number of the results to retrieve.</param>
+    /// <param name="perPage">The number of results to retrieve per page.</param>
+    /// <param name="search">The search term used to filter the results by database name.</param>
+    /// <returns>A <see cref="Task{TResult}"/> that represents the asynchronous operation. The task result contains a <see cref="PaginationResponse{T}"/> object that encapsulates the paginated list of <see cref="Database"/> objects.</returns>
     [HttpGet]
     public async Task<PaginationResponse<Database>> GetDatabases(
         [FromQuery] int page = 0, [FromQuery] int perPage = 5, [FromQuery] string search = null)
@@ -80,6 +95,11 @@ public class DatabaseController : SessionRelatedControllerBase
         };
     }
 
+    /// <summary>
+    /// Retrieves the schema of the specified database.
+    /// </summary>
+    /// <param name="databaseName">The name of the database.</param>
+    /// <returns>A <see cref="Task{TResult}"/> that represents the asynchronous operation. The task result contains a <see cref="Response{T}"/> object that encapsulates the <see cref="Database"/> object representing the schema of the specified database.</returns>
     [HttpGet("{databaseName}")]
     public async Task<Response<Database>> GetDatabaseSchema([FromRoute] string databaseName)
     {
@@ -144,6 +164,12 @@ public class DatabaseController : SessionRelatedControllerBase
         return response;
     }
 
+    /// <summary>
+    /// Retrieves the views of the specified schema in the specified database.
+    /// </summary>
+    /// <param name="databaseName">The name of the database.</param>
+    /// <param name="schemaName">The name of the schema.</param>
+    /// <returns>A <see cref="Task{TResult}"/> that represents the asynchronous operation. The task result contains a <see cref="Response{T}"/> object that encapsulates the <see cref="Schema"/> object representing the views of the specified schema.</returns>
     [HttpGet("{databaseName}/{schemaName}/views")]
     public async Task<Response<Schema>> GetSchemaViewsAsync([FromRoute] string databaseName, [FromRoute] string schemaName)
     {
@@ -209,6 +235,13 @@ public class DatabaseController : SessionRelatedControllerBase
         return response;
     }
 
+        /// <summary>
+        /// Retrieves the view with detailed information of the specified schema in the specified database.
+        /// </summary>
+        /// <param name="databaseName">The name of the database.</param>
+        /// <param name="schemaName">The name of the schema.</param>
+        /// <param name="viewName">The name of the view.</param>
+        /// <returns>A <see cref="Task{TResult}"/> that represents the asynchronous operation. The task result contains a <see cref="Response{T}"/> object that encapsulates the <see cref="View"/> object representing the view of the specified schema.</returns>
     [HttpGet("{databaseName}/{schemaName}/views/{viewName}")]
     public async Task<Response<View>> GetViewSchema(
         [FromRoute] string databaseName, [FromRoute] string schemaName, [FromRoute] string viewName)
@@ -271,6 +304,12 @@ public class DatabaseController : SessionRelatedControllerBase
         return response;
     }
 
+    /// <summary>
+    /// Retrieves the routines of the specified schema in the specified database.
+    /// </summary>
+    /// <param name="databaseName">The name of the database.</param>
+    /// <param name="schemaName">The name of the schema.</param>
+    /// <returns>A <see cref="Task{TResult}"/> that represents the asynchronous operation. The task result contains a <see cref="Response{T}"/> object that encapsulates the <see cref="Schema"/> object representing the routines of the specified schema.</returns>
     [HttpGet("{databaseName}/{schemaName}/routines")]
     public async Task<Response<Schema>> GetSchemaRoutinesAsync([FromRoute] string databaseName, [FromRoute] string schemaName)
     {
@@ -338,6 +377,13 @@ public class DatabaseController : SessionRelatedControllerBase
         return response;
     }
 
+    /// <summary>
+    /// Retrieves the schema of the specified table in the specified schema and database.
+    /// </summary>
+    /// <param name="databaseName">The name of the database.</param>
+    /// <param name="schemaName">The name of the schema.</param>
+    /// <param name="tableName">The name of the table.</param>
+    /// <returns>A <see cref="Task{TResult}"/> that represents the asynchronous operation. The task result contains a <see cref="Response{T}"/> object that encapsulates the <see cref="Table"/> object representing the schema of the specified table.</returns>
     [HttpGet("{databaseName}/{schemaName}/tables/{tableName}")]
     public async Task<Response<Table>> GetTableSchema(
         [FromRoute] string databaseName, [FromRoute] string schemaName, [FromRoute] string tableName)
@@ -630,6 +676,12 @@ public class DatabaseController : SessionRelatedControllerBase
         return response;
     }
 
+    /// <summary>
+    /// Retrieves the tables in the specified schema and database.
+    /// </summary>
+    /// <param name="databaseName">The name of the database.</param>
+    /// <param name="schemaName">The name of the schema.</param>
+    /// <returns>A <see cref="Task{TResult}"/> that represents the asynchronous operation. The task result contains a <see cref="Response{T}"/> object that encapsulates the <see cref="Schema"/> object representing the specified schema and its <see cref="Table"/> objects.</returns>
     [HttpGet("{databaseName}/{schemaName}/tables")]
     public async Task<Response<Schema>> GetSchemaTablesAsync([FromRoute] string databaseName, [FromRoute] string schemaName)
     {

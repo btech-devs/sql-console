@@ -5,10 +5,17 @@ using Btech.Sql.Console.Interfaces;
 using Btech.Sql.Console.Models;
 using Btech.Sql.Console.Utils;
 
-namespace Btech.Sql.Console.DataStorages;
+namespace Btech.Sql.Console.DataStorages.Session;
 
+/// <summary>
+/// Implementation of ISessionStorage interface that uses environment and cookies (HttpOnly) to store session data.
+/// </summary>
 public class StaticConnectionSessionStorage : ISessionStorage<SessionData>
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="StaticConnectionSessionStorage"/> class with the specified <see cref="IHttpContextAccessor"/>.
+    /// </summary>
+    /// <param name="httpContextAccessor">The <see cref="IHttpContextAccessor"/> used to access the current HttpContext.</param>
     public StaticConnectionSessionStorage(IHttpContextAccessor httpContextAccessor)
     {
         this.HttpContextAccessor = httpContextAccessor;
@@ -16,6 +23,7 @@ public class StaticConnectionSessionStorage : ISessionStorage<SessionData>
 
     private IHttpContextAccessor HttpContextAccessor { get; }
 
+    /// <inheritdoc />
     public Task<bool> SaveAsync(string email, SessionData data)
     {
         this.HttpContextAccessor
@@ -33,8 +41,10 @@ public class StaticConnectionSessionStorage : ISessionStorage<SessionData>
         return Task.FromResult(true);
     }
 
+    /// <inheritdoc />
     public Task<bool> UpdateAsync(string email, SessionData updatedSessionData) => Task.FromResult(true);
 
+    /// <inheritdoc />
     public Task<bool> DeleteAsync(string email)
     {
         this.HttpContextAccessor
@@ -46,6 +56,7 @@ public class StaticConnectionSessionStorage : ISessionStorage<SessionData>
         return Task.FromResult(true);
     }
 
+    /// <inheritdoc />
     public Task<SessionData> GetAsync(string email)
     {
         string idToken = this.HttpContextAccessor

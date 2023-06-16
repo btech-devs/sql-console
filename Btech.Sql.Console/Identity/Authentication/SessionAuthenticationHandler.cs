@@ -11,8 +11,20 @@ using Microsoft.Extensions.Options;
 
 namespace Btech.Sql.Console.Identity.Authentication;
 
+/// <summary>
+/// Provides session authentication capabilities.
+/// </summary>
 public class SessionAuthenticationHandler : AuthenticationHandlerBase<AuthenticationSchemeOptions>
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SessionAuthenticationHandler"/> class.
+    /// </summary>
+    /// <param name="options">The authentication scheme options.</param>
+    /// <param name="logger">The logger factory.</param>
+    /// <param name="encoder">The URL encoder.</param>
+    /// <param name="clock">The system clock.</param>
+    /// <param name="jwtProvider">The JWT provider.</param>
+    /// <param name="sessionStorage">The session storage.</param>
     public SessionAuthenticationHandler(
         IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder,
         ISystemClock clock, JwtProvider jwtProvider, ISessionStorage<SessionData> sessionStorage)
@@ -21,8 +33,18 @@ public class SessionAuthenticationHandler : AuthenticationHandlerBase<Authentica
         this.JwtProvider = jwtProvider;
     }
 
+    /// <summary>
+    /// Gets the JWT provider.
+    /// </summary>
     private JwtProvider JwtProvider { get; }
 
+    /// <summary>
+    /// Creates an authentication ticket with the specified instance type, connection string, and host.
+    /// </summary>
+    /// <param name="instanceType">The instance type.</param>
+    /// <param name="connectionString">The connection string.</param>
+    /// <param name="host">The host.</param>
+    /// <returns>The authentication ticket.</returns>
     private AuthenticationTicket CreateAuthenticationTicket(string instanceType, string connectionString, string host)
     {
         Claim[] claims =
@@ -39,8 +61,15 @@ public class SessionAuthenticationHandler : AuthenticationHandlerBase<Authentica
         return ticket;
     }
 
+    /// <summary>
+    /// Gets the identity error value.
+    /// </summary>
     protected override IdentityError IdentityErrorValue => IdentityError.SessionAuthenticationFailed;
 
+    /// <summary>
+    /// Authenticates the user session.
+    /// </summary>
+    /// <returns>The authentication result.</returns>
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
         AuthenticateResult authenticateResult = AuthenticateResult.Fail("Session authentication failed.");

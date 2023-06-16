@@ -69,65 +69,112 @@
                                                 <i class="bi bi-filetype-csv"></i>
                                             </button>
                                         </li>
+                                        <li *ngIf="this.savedQueriesComponent.isSupported">
+                                            <button class="dropdown-item"
+                                                    (click)="this.savedQueriesComponent?.showSaveModal(this.getQuerySql(queryIndex)!)">
+                                                Save query
+                                                <i class="bi bi-cloud-arrow-up-fill"></i>
+                                            </button>
+                                        </li>
                                     </ul>
                                 </div>
                             </div>
 
                         </ng-template>
 
-                        <div class="info-panel__wrapper d-none d-lg-block">
-                            <div hidden
-                                 #InfoPopover>
-                                <div class="d-flex flex-nowrap justify-content-between">
+                        <div class="info-panel__wrapper">
+                            <div class="d-none d-lg-block">
+                                <div hidden
+                                     #InfoPopover>
+                                    <div class="d-flex flex-nowrap justify-content-between">
                                     <span class="bg-secondary text-nowrap text-white rounded-1 px-1 fw-bold text-nowrap me-2">
                                         {{this.isMacOs ? 'Option' : 'Alt'}} + ArrowUp
                                     </span>
-                                    <span class="text-nowrap">Move line up</span>
-                                </div>
-                                <div class="d-flex flex-nowrap justify-content-between mt-1">
+                                        <span class="text-nowrap">Move line up</span>
+                                    </div>
+                                    <div class="d-flex flex-nowrap justify-content-between mt-1">
                                     <span class="bg-secondary text-white rounded-1 px-1 fw-bold text-nowrap me-2">
                                         {{this.isMacOs ? 'Option' : 'Alt'}} + ArrowDown
                                     </span>
-                                    <span class="text-nowrap">Move line down</span>
-                                </div>
-                                <div class="d-flex flex-nowrap justify-content-between mt-1">
-                                    <span class="bg-secondary text-white rounded-1 px-1 fw-bold text-nowrap me-2">Shift + Space</span>
-                                    <span class="text-nowrap">Show hints</span>
-                                </div>
-                                <div class="d-flex flex-nowrap justify-content-between mt-1">
-                                    <span class="bg-secondary text-white rounded-1 px-1 fw-bold text-nowrap me-2">Ctrl + /</span>
-                                    <span class="text-nowrap">Comment line</span>
-                                </div>
-                                <div class="d-flex flex-nowrap justify-content-between mt-1">
-                                    <span class="bg-secondary text-white rounded-1 px-1 fw-bold text-nowrap me-2">Ctrl + D</span>
-                                    <span class="text-nowrap">Duplicate line</span>
-                                </div>
-                                <div class="d-flex flex-nowrap justify-content-between mt-1">
-                                    <span class="bg-secondary text-white rounded-1 px-1 fw-bold text-nowrap me-2">Ctrl + Y</span>
-                                    <span class="text-nowrap">Delete line</span>
-                                </div>
-                                <div class="d-flex flex-nowrap justify-content-between mt-1">
+                                        <span class="text-nowrap">Move line down</span>
+                                    </div>
+                                    <div class="d-flex flex-nowrap justify-content-between mt-1">
+                                        <span class="bg-secondary text-white rounded-1 px-1 fw-bold text-nowrap me-2">Shift + Space</span>
+                                        <span class="text-nowrap">Show hints</span>
+                                    </div>
+                                    <div class="d-flex flex-nowrap justify-content-between mt-1">
+                                        <span class="bg-secondary text-white rounded-1 px-1 fw-bold text-nowrap me-2">Ctrl + /</span>
+                                        <span class="text-nowrap">Comment line</span>
+                                    </div>
+                                    <div class="d-flex flex-nowrap justify-content-between mt-1">
+                                        <span class="bg-secondary text-white rounded-1 px-1 fw-bold text-nowrap me-2">Ctrl + D</span>
+                                        <span class="text-nowrap">Duplicate line</span>
+                                    </div>
+                                    <div class="d-flex flex-nowrap justify-content-between mt-1">
+                                        <span class="bg-secondary text-white rounded-1 px-1 fw-bold text-nowrap me-2">Ctrl + Y</span>
+                                        <span class="text-nowrap">Delete line</span>
+                                    </div>
+                                    <div class="d-flex flex-nowrap justify-content-between mt-1">
                                     <span class="bg-secondary text-white rounded-1 px-1 fw-bold text-nowrap me-2">{{this.isMacOs ? 'Option' : 'Alt'}}
                                         + Enter</span>
-                                    <span class="text-nowrap">Execute</span>
+                                        <span class="text-nowrap">Execute</span>
+                                    </div>
+                                    <div class="d-flex flex-nowrap justify-content-between mt-1">
+                                        <span class="bg-secondary text-white rounded-1 px-1 fw-bold text-nowrap me-2">{{this.isMacOs ? 'Option' : 'Alt'}}
+                                            + S</span>
+                                        <span class="text-nowrap">Save query (if supported)</span>
+                                    </div>
+                                    <div class="d-flex flex-nowrap justify-content-between mt-1">
+                                        <span class="bg-secondary text-white rounded-1 px-1 fw-bold text-nowrap me-2">{{this.isMacOs ? 'Option' : 'Alt'}}
+                                            + V</span>
+                                        <span class="text-nowrap">Show saved queries (if supported)</span>
+                                    </div>
+
+                                    <p class="mt-2 mb-0">Other key bindings specified at
+                                        <a href="https://codemirror.net/docs/ref/#commands"
+                                           target="_blank">
+                                            CodeMirror Commands
+                                        </a>
+                                    </p>
                                 </div>
-
-                                <p class="mt-2 mb-0">Other key bindings specified at
-                                    <a href="https://codemirror.net/docs/ref/#commands"
-                                       target="_blank">
-                                        CodeMirror Commands
-                                    </a>
-                                </p>
+                                <button data-bs-toggle="popover"
+                                        data-bs-placement="top"
+                                        data-bs-custom-class="mw-100"
+                                        data-trigger="focus"
+                                        [attr.data-bs-content]="InfoPopover.innerHTML"
+                                        title="Key bindings"
+                                        class="btn btn-outline-secondary info-panel__opener">
+                                    ?
+                                </button>
                             </div>
-                            <button data-bs-toggle="popover"
-                                    data-bs-placement="top"
-                                    data-bs-custom-class="mw-100"
-                                    [attr.data-bs-content]="InfoPopover.innerHTML"
-                                    title="Key bindings"
-                                    class="btn btn-outline-secondary info-panel__opener">
-                                ?
-                            </button>
 
+                            <div *ngIf="this.savedQueriesComponent.isSupported"
+                                 class="dropdown mt-1">
+                                <button class="btn btn-outline-secondary info-panel__opener"
+                                        type="button"
+                                        data-bs-toggle="dropdown"
+                                        data-bs-autoClose="true"
+                                        data-bs-boundary="document"
+                                        aria-expanded="false">
+                                    <i class="bi bi-list-stars"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <button class="dropdown-item"
+                                                (click)="this.savedQueriesComponent.showPopover($event.clientX - 50, $event.clientY, $event)">
+                                            Show saved queries
+                                            <i class="bi bi-list-task"></i>
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <button class="dropdown-item"
+                                                (click)="this.savedQueriesComponent.showEditModal()">
+                                            Edit saved queries
+                                            <i class="bi bi-pencil-square"></i>
+                                        </button>
+                                    </li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -178,6 +225,22 @@
                                             (click)="dsvExporterComponent.openExecuteToDsvModal(this.getQuerySql(this.lastSelectQueryIndex), this.selectedDatabase!.name)">
                                         Export to DSV
                                         <i class="bi bi-filetype-csv"></i>
+                                    </button>
+                                </li>
+                                <li>
+                                    <button [disabled]="!this.anyValidSelect"
+                                            class="dropdown-item"
+                                            (click)="dsvExporterComponent.openExecuteToDsvModal(this.getQuerySql(this.lastSelectQueryIndex), this.selectedDatabase!.name)">
+                                        Export to DSV
+                                        <i class="bi bi-filetype-csv"></i>
+                                    </button>
+                                </li>
+                                <li *ngIf="this.savedQueriesComponent.isSupported">
+                                    <button class="dropdown-item"
+                                            [disabled]="!this.rawQuery"
+                                            (click)="this.savedQueriesComponent?.showSaveModal(this.rawQuery)">
+                                        Save query
+                                        <i class="bi bi-cloud-arrow-up-fill"></i>
                                     </button>
                                 </li>
                             </ul>
@@ -510,3 +573,7 @@
                   [tableList]="this.selectedDatabaseTables"
                   #dsvImporter>
 </app-dsv-importer>
+
+<app-saved-queries (insertQuery)="this.insertAtCursor($event)"
+                   (onClose)="this.onClosePopover($event)"
+                   #savedQueriesComponent></app-saved-queries>

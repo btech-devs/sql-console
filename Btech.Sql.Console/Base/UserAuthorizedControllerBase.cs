@@ -5,6 +5,9 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace Btech.Sql.Console.Base;
 
+/// <summary>
+/// Represents the base class for all controllers that require a Google authentication.
+/// </summary>
 [Authorize(Constants.Identity.GoogleIdentityAuthorizationPolicyName)]
 public abstract class UserAuthorizedControllerBase : ControllerBase
 {
@@ -13,6 +16,13 @@ public abstract class UserAuthorizedControllerBase : ControllerBase
     {
     }
 
+    /// <summary>
+    /// Retrieves the value of the specified user claim from the current request's principal.
+    /// If the claim is not present or has an empty value, an exception is thrown.
+    /// </summary>
+    /// <param name="claimType">The type of the user claim to retrieve.</param>
+    /// <returns>The value of the user claim.</returns>
+    /// <exception cref="ApplicationException">Thrown if the specified claim is not found or has an empty value, or if authentication is required and the user is not authenticated.</exception>
     protected string GetRequiredUserClaim(string claimType)
     {
         string value;
@@ -40,11 +50,23 @@ public abstract class UserAuthorizedControllerBase : ControllerBase
         return value;
     }
 
+    /// <summary>
+    /// Retrieves the value of the specified user claim from the current request's principal.
+    /// If the claim is not present or has an empty value, null is returned.
+    /// </summary>
+    /// <param name="claimType">The type of the user claim to retrieve.</param>
+    /// <returns>The value of the user claim, or null if the claim is not present or has an empty value.</returns>
     protected string GetUserClaim(string claimType)
     {
         return this.HttpContext.User.Claims.FirstOrDefault(claim => claim.Type == claimType)?.Value;
     }
 
+    /// <summary>
+    /// Retrieves the <see cref="SessionData"/> object from the current HTTP context's items collection.
+    /// If the SessionData object is not found or is not of the expected type, an exception is thrown.
+    /// </summary>
+    /// <returns>The SessionData object from the current HTTP context's items collection.</returns>
+    /// <exception cref="ApplicationException">Thrown if the SessionData object is not found or is not of the expected type.</exception>
     protected SessionData GetSessionData()
     {
         if (!this.HttpContext.Items.TryGetValue(Constants.Identity.SessionDataItemName, out var sessionDataObject) ||
@@ -56,6 +78,11 @@ public abstract class UserAuthorizedControllerBase : ControllerBase
         return sessionData;
     }
 
+    /// <summary>
+    /// Retrieves the database host from the current request's principal.
+    /// </summary>
+    /// <returns>The database host retrieved from the current request's principal.</returns>
+    /// <exception cref="ApplicationException">Thrown if the required user claim for the database host is not found or has an empty value, or if authentication is required and the user is not authenticated.</exception>
     protected string GetDatabaseHost()
     {
         return this.GetRequiredUserClaim(Constants.Identity.ClaimTypes.Host);

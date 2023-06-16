@@ -3,6 +3,9 @@ import {Component, OnInit} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {PATH_GOOGLE_AUTHORIZATION} from '../../utils';
 
+/**
+ * Component for displaying error messages and handling error actions.
+ */
 @Component({
     selector: 'app-error',
     templateUrl: './error.component.html'
@@ -20,18 +23,32 @@ export class ErrorComponent extends BaseComponent implements OnInit {
         this._activatedRoute = activatedRoute;
     }
 
+    /**
+     * Get the error message.
+     */
     get message(): string | undefined {
         return this._message;
     }
 
+    /**
+     * Set the error message.
+     * @param value - The error message.
+     */
     set message(value: string | undefined) {
         this._message = value;
     }
 
+    /**
+     * Get the status of the "Try Again" button.
+     */
     get tryAgainButton(): boolean | undefined {
         return this._tryAgainButton;
     }
 
+    /**
+     * Set the status of the "Try Again" button.
+     * @param value - The status of the button.
+     */
     set tryAgainButton(value: boolean | undefined) {
         this._tryAgainButton = value;
     }
@@ -61,6 +78,10 @@ export class ErrorComponent extends BaseComponent implements OnInit {
             });
     }
 
+    /**
+     * Callback function when the "Try Again" button is clicked.
+     * Navigates to the Google Authorization path.
+     */
     public onTryAgain() {
         this._router.navigate([PATH_GOOGLE_AUTHORIZATION]);
     }

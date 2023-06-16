@@ -5,6 +5,10 @@ import {PATH_CONNECTION, REFRESH_TOKEN_KEY, SESSION_TOKEN_KEY} from '../utils';
 import {JwtService} from '../_services/jwt.service';
 import {SessionStorageService} from '../_services/sessionStorageService';
 
+/**
+ * Guard that checks if the user's session is valid and authenticated before accessing a route.
+ * If the session is invalid or expired, it redirects the user to the connection page.
+ */
 @Injectable()
 export class SessionAuthGuard implements CanActivate {
 
@@ -13,6 +17,12 @@ export class SessionAuthGuard implements CanActivate {
         private _jwtProvider: JwtService) {
     }
 
+    /**
+     * Checks if the user's session is valid and authenticated before allowing access to the specified route.
+     * @param route The activated route snapshot.
+     * @param state The router state snapshot.
+     * @returns A boolean or UrlTree indicating whether the user's session is valid or should be redirected.
+     */
     canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot)
         : Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
 

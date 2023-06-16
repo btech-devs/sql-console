@@ -20,27 +20,63 @@ import {Response} from '../../_models/responses/base/response';
 import {LocalStorageService} from '../../_services/localStorageService';
 import {MetadataService} from '../../_services/metadata.service';
 
+/**
+ * Component for managing connections.
+ */
 @Component({
     selector: 'app-connection',
     templateUrl: './connection.component.html',
     styleUrls: ['./connection.component.less']
 })
 export class ConnectionComponent extends BaseComponent {
+    /**
+     * Maximum length of the host.
+     */
     readonly hostMaxLength = 255;
 
+    /**
+     * Maximum length of the port.
+     */
     readonly portMaxLength = 5;
 
+    /**
+     * Maximum length of the username.
+     */
     readonly usernameMaxLength = 63;
 
+    /**
+     * Maximum length of the password.
+     */
     readonly passwordMaxLength = 99;
 
+    /**
+     * Default port for PostgreSQL.
+     */
     readonly defaultPortPgSql = 5432;
+
+    /**
+     * Default port for Microsoft SQL Server.
+     */
     readonly defaultPortMsSql = 1433;
 
+    /**
+     * Regular expression for validating a host address.
+     */
     readonly validHostRegex: RegExp = new RegExp('^[a-z0-9]+([\\-\.][a-z0-9]+)*\\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$');
+
+    /**
+     * Regular expression for validating a Cloud SQL route.
+     */
     readonly validCloudSqlRouteRegex: RegExp = new RegExp('^\/cloudsql\/[\\w_\-]+:[\\w_\-]+:[\\w_\-]+\/?$');
+
+    /**
+     * Regular expression for validating an IP address.
+     */
     readonly validIpRegex: RegExp = new RegExp('^((((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4})|localhost)$');
 
+    /**
+     * List of connection options.
+     */
     readonly options: { description: string; value: string }[] = [
         {value: InstanceType.PgSql.toString(), description: 'PostgreSQL (AlloyDB)'},
         {value: InstanceType.MsSql.toString(), description: 'Microsoft SQL Server'}
@@ -49,30 +85,54 @@ export class ConnectionComponent extends BaseComponent {
     private _returnUrl: string;
 
     private _error?: string = undefined;
+
+    /**
+     * Get the error message.
+     */
     get error(): string | undefined {
         return this._error;
     }
 
     private _isStaticConnectionLoading: boolean = true;
+
+    /**
+     * Check if the static connection is loading.
+     */
     get isStaticConnectionLoading(): boolean {
         return this._isStaticConnectionLoading;
     }
 
     private readonly _connectionForm: FormGroup;
+
+    /**
+     * Get the connection form.
+     */
     get connectionForm(): FormGroup {
         return this._connectionForm;
     }
 
     private _loading: boolean = false;
+
+    /**
+     * Check if the connection is loading.
+     */
     get loading(): boolean {
         return this._loading;
     }
 
+    /**
+     * Set the loading state of the connection.
+     * @param value - Boolean value indicating the loading state.
+     */
     set loading(value: boolean) {
         this._loading = value;
     }
 
     private _jwtPublicKeyLoaded: boolean;
+
+    /**
+     * Check if the JWT public key is loaded.
+     */
     get jwtPublicKeyLoaded(): boolean {
         this._jwtPublicKeyLoaded = !!LocalStorageService.get(JWT_PUBLIC_KEY_KEY);
 
@@ -134,6 +194,9 @@ export class ConnectionComponent extends BaseComponent {
             });
     }
 
+    /**
+     * Callback function when the connect button is clicked.
+     */
     onConnect() {
         this._connectionForm?.markAllAsTouched();
 
@@ -187,6 +250,10 @@ export class ConnectionComponent extends BaseComponent {
         }
     }
 
+    /**
+     * Validator function for the host field.
+     * @returns A ValidatorFn for host validation.
+     */
     hostValidator(): ValidatorFn {
         return (control: AbstractControl): ValidationErrors | null => {
             let validationError: string | null = null;
@@ -205,6 +272,10 @@ export class ConnectionComponent extends BaseComponent {
         };
     }
 
+    /**
+     * Validator function for the port field.
+     * @returns A ValidatorFn for port validation.
+     */
     portValidator(): ValidatorFn {
         return (control: AbstractControl): ValidationErrors | null => {
             let validationError: string | null = null;
@@ -243,6 +314,10 @@ export class ConnectionComponent extends BaseComponent {
         });
     }
 
+    /**
+     * Callback function when an option is selected.
+     * @param event - The selected event.
+     */
     selected(event: Event): void {
         // @ts-ignore
         event.target?.classList?.add('selected');

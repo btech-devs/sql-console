@@ -11,6 +11,9 @@ import {
 } from '../../utils';
 import {SessionStorageService} from '../../_services/sessionStorageService';
 
+/**
+ * Component responsible for handling the Google authorization process.
+ */
 @Component({
     selector: 'app-google-auth',
     templateUrl: './google-authorization.component.html'

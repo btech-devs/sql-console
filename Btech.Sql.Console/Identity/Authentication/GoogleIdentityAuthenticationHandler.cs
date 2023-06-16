@@ -16,8 +16,19 @@ using RestSharp;
 
 namespace Btech.Sql.Console.Identity.Authentication;
 
+/// <summary>
+/// Authentication handler for Google identity authentication.
+/// </summary>
 public class GoogleIdentityAuthenticationHandler : AuthenticationHandlerBase<AuthenticationSchemeOptions>
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GoogleIdentityAuthenticationHandler"/> class.
+    /// </summary>
+    /// <param name="options">The authentication scheme options.</param>
+    /// <param name="logger">The logger factory.</param>
+    /// <param name="encoder">The URL encoder.</param>
+    /// <param name="clock">The system clock.</param>
+    /// <param name="sessionStorage">The session storage.</param>
     public GoogleIdentityAuthenticationHandler(
         IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder,
         ISystemClock clock, ISessionStorage<SessionData> sessionStorage)
@@ -25,8 +36,16 @@ public class GoogleIdentityAuthenticationHandler : AuthenticationHandlerBase<Aut
     {
     }
 
+    /// <summary>
+    /// The URI for Google token refresh requests.
+    /// </summary>
     private const string GoogleRefreshTokenUri = "https://oauth2.googleapis.com/token";
 
+    /// <summary>
+    /// Refreshes the access token using a refresh token.
+    /// </summary>
+    /// <param name="refreshToken">The refresh token.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation. The result is the token response.</returns>
     private async Task<TokenResponse> RefreshTokenAsync(string refreshToken)
     {
         RestClient client = new RestClient();
@@ -67,6 +86,11 @@ public class GoogleIdentityAuthenticationHandler : AuthenticationHandlerBase<Aut
         };
     }
 
+    /// <summary>
+    /// Creates a new authentication ticket for the specified email.
+    /// </summary>
+    /// <param name="email">The email address.</param>
+    /// <returns>The authentication ticket.</returns>
     private AuthenticationTicket CreateAuthenticationTicket(string email)
     {
         Claim[] claims =
@@ -81,8 +105,15 @@ public class GoogleIdentityAuthenticationHandler : AuthenticationHandlerBase<Aut
         return ticket;
     }
 
+    /// <summary>
+    /// The <see cref="IdentityError"/> value to use when authentication fails.
+    /// </summary>
     protected override IdentityError IdentityErrorValue => IdentityError.IdAuthenticationFailed;
 
+    /// <summary>
+    /// Attempts to authenticate the user.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation. The result is the authentication result.</returns>
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
         AuthenticateResult authenticateResult = AuthenticateResult.Fail("Google authentication failed.");

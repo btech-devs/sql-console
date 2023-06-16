@@ -13,6 +13,9 @@ import {View} from '../../../_models/responses/database/view.model';
 
 declare var $: any;
 
+/**
+ * Represents the database viewer component.
+ */
 @Component({
     selector: 'app-database-viewer',
     templateUrl: './database-viewer.component.html',
@@ -22,6 +25,7 @@ export class DatabaseViewerComponent implements OnInit {
     constructor(private _databaseService: DatabaseService) {
     }
 
+    /** Reference to the database selector element. */
     @ViewChild('databaseSelector') databaseSelector?: ElementRef;
 
     private _console: Console = new Console();
@@ -37,57 +41,75 @@ export class DatabaseViewerComponent implements OnInit {
     private _host?: string;
     private _selectedSchemas: Schema[] = [];
 
+    /** The query limit for database queries. */
     @Input() queryLimit?: number;
 
+    /** The console for displaying messages. */
     @Input() set console(value: Console) {
         this._console = value;
     }
 
+    /** Event emitted when raw SQL query should be executed. */
     @Output() onExecuteRawSql: EventEmitter<{ sql: string, newTab: boolean }> = new EventEmitter<{
         sql: string,
         newTab: boolean
     }>();
+
+    /** Event emitted when a new line should be inserted. */
     @Output() onInsertNewLine: EventEmitter<string> = new EventEmitter<string>();
 
+    /** Event emitted when a database is selected. */
     @Output() onSelectDatabase: EventEmitter<Database> = new EventEmitter<Database>();
+
+    /** Event emitted when schemas are selected. */
     @Output() onSelectSchema: EventEmitter<Schema[]> = new EventEmitter<Schema[]>();
 
+    /** Gets the host of the database. */
     get host(): string | undefined {
         return this._host;
     }
 
+    /** Gets the databases. */
     get databases(): Database[] {
         return this._databases;
     }
 
+    /** Gets whether instance data is being fetched. */
     get isFetchingInstanceData(): boolean {
         return this._isFetchingInstanceData;
     }
 
+    /** Gets the selected database. */
     get selectedDatabase(): Database | undefined {
         return this._selectedDatabase;
     }
 
+    /** Gets the database page. */
     get databasePage(): number {
         return this._databasePage;
     }
 
+    /** Gets the selected schemas. */
     get selectedSchemas(): Schema[] {
         return this._selectedSchemas;
     }
 
+    /** Gets the number of databases per page. */
     get databasesPerPage(): number | undefined {
         return this._databasesPerPage;
     }
 
+    /** Gets the total amount of databases. */
     get databasesTotalAmount(): number | undefined {
         return this._databasesTotalAmount;
     }
 
+    /** Gets the database search string. */
     get databaseSearch(): string {
         return this._databaseSearch;
     }
 
+    /** Sets the selected database. */
     set selectedDatabase(value) {
         this._selectedDatabase = value;
         this.databaseSelector?.nativeElement.classList.remove('btn-outline-danger');
@@ -119,6 +141,10 @@ export class DatabaseViewerComponent implements OnInit {
         this.getDatabases();
     }
 
+    /**
+     * Sets the current page number of the database list.
+     * @param value The page number to set.
+     */
     set databasePage(value: number) {
         if (value < 0)
             value = 0;
@@ -129,6 +155,10 @@ export class DatabaseViewerComponent implements OnInit {
         }
     }
 
+    /**
+     * Sets the search value for filtering the database list.
+     * @param value The search value to set.
+     */
     set databaseSearch(value: string) {
         this._databaseSearch = value;
 
@@ -143,6 +173,9 @@ export class DatabaseViewerComponent implements OnInit {
             300);
     }
 
+    /**
+     * Reloads the database structure.
+     */
     reloadDatabaseStructure() {
         this.getDatabases();
 
@@ -151,6 +184,9 @@ export class DatabaseViewerComponent implements OnInit {
         }
     }
 
+    /**
+     * Retrieves the list of databases.
+     */
     getDatabases(): void {
         this._isFetchingInstanceData = true;
 
@@ -177,6 +213,10 @@ export class DatabaseViewerComponent implements OnInit {
             });
     }
 
+    /**
+     * Selects a database.
+     * @param database The database to select.
+     */
     selectDatabase(database: Database): void {
         this._isFetchingInstanceData = true;
 
@@ -221,6 +261,11 @@ export class DatabaseViewerComponent implements OnInit {
             });
     }
 
+    /**
+     * Retrieves additional information for a column.
+     * @param column The column to retrieve information for.
+     * @returns The additional information for the column.
+     */
     getColumnAdditionalInfo(column: Column): string | undefined {
         let info: string | undefined = column.type;
 
@@ -230,6 +275,12 @@ export class DatabaseViewerComponent implements OnInit {
         return info;
     }
 
+    /**
+     * Execute select query for table.
+     * @param schema The schema of the table.
+     * @param table The name of the table.
+     * @param newTab Determines if the table should be opened in a new tab.
+     */
     viewTable(schema: string, table: string, newTab: boolean = false): void {
         let viewTableSql: string = '';
 
@@ -250,6 +301,12 @@ export class DatabaseViewerComponent implements OnInit {
         this.onExecuteRawSql.emit({sql: viewTableSql, newTab: newTab});
     }
 
+    /**
+     * Views the row count of a table.
+     * @param schema The schema of the table.
+     * @param table The name of the table.
+     * @param newTab Determines if the row count should be opened in a new tab.
+     */
     viewRowCount(schema: string, table: string, newTab: boolean = false): void {
         let rowCountSql: string = '';
 
@@ -270,6 +327,11 @@ export class DatabaseViewerComponent implements OnInit {
         this.onExecuteRawSql.emit({sql: rowCountSql, newTab: newTab});
     }
 
+    /**
+     * Adds a select template for a table.
+     * @param schema The schema of the table.
+     * @param table The name of the table.
+     */
     addSelectTemplate(schema: string, table: string): void {
         let selectFromTablePattern: string = '';
 
@@ -289,6 +351,11 @@ export class DatabaseViewerComponent implements OnInit {
         this.onInsertNewLine.emit(selectFromTablePattern);
     }
 
+    /**
+     * Adds an update template for a table.
+     * @param schema The schema of the table.
+     * @param table The name of the table.
+     */
     addUpdateTemplate(schema: string, table: string): void {
         let updateTablePattern: string = '';
 
@@ -308,6 +375,11 @@ export class DatabaseViewerComponent implements OnInit {
         this.onInsertNewLine.emit(updateTablePattern);
     }
 
+    /**
+     * Adds an insert template for a table.
+     * @param schema The schema of the table.
+     * @param table The name of the table.
+     */
     addInsertTemplate(schema: string, table: string): void {
         let insertTablePattern: string = '';
         let tableSchema: Table = this.selectedDatabase!.schemas!
@@ -357,6 +429,11 @@ export class DatabaseViewerComponent implements OnInit {
         this.onInsertNewLine.emit(insertTablePattern);
     }
 
+    /**
+     * Adds a delete template for a table.
+     * @param schema The schema of the table.
+     * @param table The name of the table.
+     */
     addDeleteTemplate(schema: string, table: string): void {
         let deleteFromTablePattern: string = '';
 
@@ -376,6 +453,12 @@ export class DatabaseViewerComponent implements OnInit {
         this.onInsertNewLine.emit(deleteFromTablePattern);
     }
 
+    /**
+     * Loads the tables of a schema.
+     * @param schema The schema to load tables for.
+     * @param isHidden Determines if the tables should be hidden initially.
+     * @param emitChanges Determines if changes should be emitted.
+     */
     loadTables(schema: Schema, isHidden: boolean = false, emitChanges: boolean = false): void {
         if (isHidden && !schema.tables?.length) {
             this._databaseService.getSchemaTables(this.selectedDatabase!.name!, schema!.name!)
@@ -394,6 +477,12 @@ export class DatabaseViewerComponent implements OnInit {
             this.emitChanges();
     }
 
+    /**
+     * Loads the columns of a table in a schema.
+     * @param schema The schema of the table.
+     * @param table The table to load columns for.
+     * @param isHidden Determines if the columns should be hidden initially.
+     */
     loadTableColumns(schema: Schema, table: Table, isHidden: boolean = false): void {
         if (isHidden) {
             this._databaseService.getSchemaTable(this.selectedDatabase!.name!, schema!.name!, table!.name!)
@@ -414,6 +503,11 @@ export class DatabaseViewerComponent implements OnInit {
         }
     }
 
+    /**
+     * Loads the views of a schema.
+     * @param schema The schema to load views for.
+     * @param isHidden Determines if the views should be hidden initially.
+     */
     loadViews(schema: Schema, isHidden: boolean = false): void {
         if (isHidden) {
             this._databaseService.getSchemaViews(this.selectedDatabase!.name!, schema!.name!)
@@ -429,6 +523,11 @@ export class DatabaseViewerComponent implements OnInit {
         }
     }
 
+    /**
+     * Loads the routines of a schema.
+     * @param schema The schema to load routines for.
+     * @param isHidden Determines if the routines should be hidden initially.
+     */
     loadRoutines(schema: Schema, isHidden: boolean = false): void {
         if (isHidden) {
             this._databaseService.getSchemaRoutines(this.selectedDatabase!.name!, schema!.name!)
@@ -444,6 +543,12 @@ export class DatabaseViewerComponent implements OnInit {
         }
     }
 
+    /**
+     * Loads the columns of a view in a schema.
+     * @param schema The schema of the view.
+     * @param view The view to load columns for.
+     * @param isHidden Determines if the columns should be hidden initially.
+     */
     loadViewColumns(schema: Schema, view: View, isHidden: boolean = false): void {
         if (isHidden) {
             this._databaseService.getViewColumns(this.selectedDatabase!.name!, schema!.name!, view!.name!)
@@ -459,10 +564,18 @@ export class DatabaseViewerComponent implements OnInit {
         }
     }
 
+    /**
+     * Emits changes on schema has been selected.
+     */
     emitChanges() {
         this.onSelectSchema.emit(this._selectedSchemas);
     }
 
+    /**
+     * Handles the checkbox selection of a schema.
+     * @param schema The selected schema.
+     * @param event The event object.
+     */
     onCheckboxSelectSchema(schema: Schema, event: any) {
         if (event?.target?.checked == true) {
             this._selectedSchemas.push(schema);
@@ -475,6 +588,11 @@ export class DatabaseViewerComponent implements OnInit {
         }
     }
 
+    /**
+     * Shows the schema folder.
+     * @param schema The schema to show.
+     * @param shown Determines if the schema is shown.
+     */
     showSchemaFolder(schema: Schema, shown: boolean) {
         if (shown) {
             let checkbox: HTMLInputElement = (document.getElementById(`${schema.name}-checkbox`) as HTMLInputElement);
@@ -486,6 +604,11 @@ export class DatabaseViewerComponent implements OnInit {
         }
     }
 
+    /**
+     * Checks if a schema already selected.
+     * @param schema The schema to check.
+     * @returns True if the schema is selected, false otherwise.
+     */
     isSelectedSchema(schema: Schema): boolean {
         return this.selectedSchemas.some(s => s.name == schema.name);
     }

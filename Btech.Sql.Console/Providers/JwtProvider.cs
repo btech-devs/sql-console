@@ -7,8 +7,17 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Btech.Sql.Console.Providers;
 
+/// <summary>
+/// Provides methods for creating and validating JSON Web Tokens (JWT).
+/// </summary>
 public class JwtProvider
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="JwtProvider"/> class with the specified dependencies.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="jwtConfiguration">The JWT configuration.</param>
+    /// <param name="cryptographyProvider">The cryptography provider.</param>
     public JwtProvider(ILogger<JwtProvider> logger, JwtConfiguration jwtConfiguration, CryptographyProvider cryptographyProvider)
     {
         this.Logger = logger;
@@ -20,6 +29,10 @@ public class JwtProvider
     private JwtConfiguration Configuration { get; }
     private CryptographyProvider CryptographyProvider { get; }
 
+    /// <summary>
+    /// Generates a random salt value.
+    /// </summary>
+    /// <returns>The salt value as a string.</returns>
     private string GenerateSalt()
     {
         byte[] randomBytes = null;
@@ -35,6 +48,12 @@ public class JwtProvider
             : null;
     }
 
+    /// <summary>
+    /// Creates a new JWT token with the specified expiration time and claims.
+    /// </summary>
+    /// <param name="expiration">The token expiration time in minutes.</param>
+    /// <param name="claims">The list of claims to include in the token.</param>
+    /// <returns>The generated JWT token as a string.</returns>
     private string CreateToken(int expiration, List<Claim> claims = null)
     {
         JwtSecurityTokenHandler tokenHandler = new();
@@ -65,6 +84,12 @@ public class JwtProvider
         return tokenHandler.WriteToken(tokenHandler.CreateToken(tokenDescriptor));
     }
 
+    /// <summary>
+    /// Creates a new session token with the specified instance type and host values.
+    /// </summary>
+    /// <param name="instanceType">The instance type to include in the token.</param>
+    /// <param name="host">The host value to include in the token.</param>
+    /// <returns>The generated session token as a string.</returns>
     public string CreateSessionToken(string instanceType, string host)
     {
         return this.CreateToken(
@@ -76,11 +101,21 @@ public class JwtProvider
             });
     }
 
+    /// <summary>
+    /// Creates a new refresh token.
+    /// </summary>
+    /// <returns>The generated refresh token as a string.</returns>
     public string CreateRefreshToken()
     {
         return this.CreateToken(this.Configuration.RefreshTokenLifetimeMinutes);
     }
 
+    /// <summary>
+    /// Determines if a given JWT token is valid.
+    /// </summary>
+    /// <param name="token">The JWT token to validate.</param>
+    /// <param  name="tokenExpired">A flag indicating if the token has expired.</param>
+    /// <returns>A flag indicating if the token is valid.</returns>
     public bool IsValidToken(string token, out bool tokenExpired)
     {
         bool isValid = false;

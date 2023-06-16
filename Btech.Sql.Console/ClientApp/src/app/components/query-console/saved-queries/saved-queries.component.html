@@ -1,0 +1,234 @@
+<ng-container *ngIf="this.isSupported">
+    <div id="select-query-modal"
+         class="saved-queries-popover"
+         #popover>
+        <ul class="list-group">
+            <li *ngFor="let savedQuery of this.savedQueries"
+                class="list-group-item d-flex flex-nowrap justify-content-between align-items-center cursor-pointer saved-query"
+                [ngClass]="{'active': this.selectedQuery == savedQuery}">
+                <div class="me-auto w-100 py-2 ps-2"
+                     (click)="this.onInsertQuery(savedQuery)">
+                    <div class="fw-bold"
+                         title="{{savedQuery.name}}">{{(savedQuery.name | slice:0:25) + (savedQuery.name!.length > 25 ? '...' : '')}}</div>
+                </div>
+                <span *ngIf="savedQuery.isLoading"
+                      class="spinner-grow spinner-grow-sm"
+                      role="status"
+                      aria-hidden="true">
+            </span>
+            </li>
+        </ul>
+    </div>
+
+    <div class="modal modal-lg fade"
+         tabindex="-1"
+         #saveModal>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Save query</h5>
+                </div>
+                <div class="modal-body">
+                    <form [formGroup]="this.form">
+                        <div class="form-floating alert-validation mt-3">
+                            <input id="name"
+                                   formControlName="name"
+                                   class="form-control"
+                                   type="text">
+                            <label for="name">
+                                <span>Name</span>
+                            </label>
+
+                            <div class="alert alert-danger d-flex align-items-center shadow"
+                                 role="alert"
+                                 *ngIf="!this.form.controls['name'].valid && this.form.controls['name'].touched">
+                                <ng-container *ngFor="let error of this.form.controls['name'].errors | keyvalue; let errorIndex = index">
+                                    <hr *ngIf="errorIndex > 0">
+                                    <ng-container [ngSwitch]="error.key">
+                                        <p class="m-0"
+                                           *ngSwitchCase="'required'">
+                                            The field is required.
+                                        </p>
+                                        <p class="m-0"
+                                           *ngSwitchCase="'maxlength'">
+                                            The field is too large. Max length: 128. Actual
+                                            length: {{this.form.value.name.length}}.
+                                        </p>
+                                    </ng-container>
+                                </ng-container>
+                            </div>
+                        </div>
+                        <div class="code-editor mt-2">
+                        <textarea #editor
+                                  class="text-box__query">
+                        </textarea>
+                        </div>
+                    </form>
+
+                    <div *ngIf="this.savedQueries?.length && this.savedQueries!.length >= 20"
+                         class="alert alert-danger mt-2">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        Query can not be saved. Cause: The maximum number of saved queries has already been reached.
+                        Total
+                        count: {{this.savedQueries!.length}}.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button"
+                            class="btn btn-outline-danger"
+                            data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+                    <button type="button"
+                            [disabled]="!this.form.valid ||this.isLoading || (this.savedQueries?.length && this.savedQueries!.length >= 20)"
+                            (click)="this.addQuery()"
+                            class="btn btn-outline-success">
+                        <span *ngIf="!this.isLoading">Save</span>
+                        <span *ngIf="this.isLoading">
+                        <span class="spinner-grow spinner-grow-sm"
+                              role="status"
+                              aria-hidden="true">
+                        </span>
+                        Saving...
+                    </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal modal-lg fade"
+         tabindex="-1"
+         #editModal>
+        <div class="modal-dialog mt-3">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="d-flex flex-nowrap justify-content-between align-items-center">
+                        <h5 class="modal-title">Saved queries</h5>
+                        <button type="button"
+                                class="btn btn-sm fs-4"
+                                data-bs-dismiss="modal"
+                                aria-label="Close">
+                            <i class="bi bi-x-circle"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <div *ngIf="!this.savedQueries?.length"
+                         class="text-center text-secondary mt-3">
+                        <i class="bi bi-box fs-2"></i>
+                        <p class="text-center">
+                            There are no saved queries
+                        </p>
+                    </div>
+                    <div *ngIf="this.savedQueries?.length"
+                         class="row">
+                        <div class="col-lg-4">
+                            <ul class="list-group rounded-0 list-overflow-auto">
+                                <li *ngFor="let savedQuery of this.savedQueries; let i = index"
+                                    class="list-group-item d-flex flex-nowrap justify-content-between align-items-center cursor-pointer saved-query"
+                                    [ngClass]="{'active': this.selectedToEditQuery == savedQuery}">
+                                    <div class="me-auto w-100 py-3 ps-2"
+                                         (click)="this.onSelectToEdit(i)">
+                                        <div class="fw-bold">
+                                            <span title="{{savedQuery.name}}">{{(savedQuery.name | slice:0:15) + (savedQuery.name!.length > 15 ? '...' : '')}}</span>
+                                        </div>
+                                    </div>
+                                    <button
+                                            (click)="this.deleteQuery(savedQuery)"
+                                            class="btn btn-sm btn-outline-danger">
+                                        <i *ngIf="!savedQuery.isLoading"
+                                           class="bi bi-x-lg"></i>
+
+                                        <span *ngIf="savedQuery.isLoading"
+                                              class="spinner-grow spinner-grow-sm mt-1"
+                                              role="status"
+                                              aria-hidden="true">
+                                        </span>
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-lg-8">
+                            <ng-container *ngIf="this.selectedToEditQuery">
+                                <p class="mt-3 d-lg-none text-center">Edit</p>
+                                <div *ngIf="this.isLoading"
+                                     class="d-flex justify-content-center">
+                                    <div class="spinner-grow"
+                                         role="status">
+                                        <span class="sr-only">Loading...</span>
+                                    </div>
+                                </div>
+
+                                <form [formGroup]="this.form"
+                                      *ngIf="!this.isLoading">
+                                    <div class="form-floating alert-validation mt-3">
+                                        <input formControlName="name"
+                                               class="form-control"
+                                               type="text">
+                                        <label>
+                                            <span>Name</span>
+                                        </label>
+
+                                        <div class="alert alert-danger d-flex align-items-center shadow"
+                                             role="alert"
+                                             *ngIf="!this.form.controls['name'].valid && this.form.controls['name'].touched">
+                                            <ng-container *ngFor="let error of this.form.controls['name'].errors | keyvalue; let errorIndex = index">
+                                                <hr *ngIf="errorIndex > 0">
+                                                <ng-container [ngSwitch]="error.key">
+                                                    <p class="m-0"
+                                                       *ngSwitchCase="'required'">
+                                                        The field is required.
+                                                    </p>
+                                                    <p class="m-0"
+                                                       *ngSwitchCase="'maxlength'">
+                                                        The field is too large. Max length: 128. Actual
+                                                        length: {{this.form.value.name.length}}.
+                                                    </p>
+                                                </ng-container>
+                                            </ng-container>
+                                        </div>
+                                    </div>
+                                </form>
+                            </ng-container>
+                            <div class="code-editor mt-2"
+                                 [ngClass]="{'visually-hidden': this.isLoading || !this.selectedToEditQuery}">
+                            <textarea #editorEditModal
+                                      class="text-box__query">
+                            </textarea>
+                            </div>
+                            <div *ngIf="!this.isLoading && this.selectedToEditQuery"
+                                 class="d-flex justify-content-end mt-3">
+                                <button (click)="this.resetEditForm()"
+                                        [disabled]="!this.form.dirty"
+                                        class="btn btn-outline-warning">
+                                    Reset
+                                </button>
+                                <button type="button"
+                                        [disabled]="this.selectedToEditQuery.isLoading || !this.form.dirty || !this.form.valid"
+                                        (click)="this.updateQuery()"
+                                        class="btn btn-outline-success ms-2">
+                                    <span *ngIf="!this.selectedToEditQuery.isLoading">Save</span>
+                                    <span *ngIf="this.selectedToEditQuery.isLoading">
+                                    <span class="spinner-grow spinner-grow-sm"
+                                          role="status"
+                                          aria-hidden="true"></span>
+                                    Saving...
+                                </span>
+                                </button>
+                            </div>
+
+                            <div *ngIf="!this.selectedToEditQuery"
+                                 class="text-center text-secondary mt-3">
+                                <i class="bi bi-view-list fs-2"></i>
+                                <p class="text-center">
+                                    Select a saved query to edit
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</ng-container>

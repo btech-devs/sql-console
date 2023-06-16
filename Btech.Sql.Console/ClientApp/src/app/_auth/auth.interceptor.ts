@@ -30,6 +30,11 @@ import {
 import {JwtService} from '../_services/jwt.service';
 import {SessionStorageService} from '../_services/sessionStorageService';
 
+/**
+ * Interceptor for handling authentication and authorization for HTTP requests.
+ * It adds authentication tokens to the request headers, updates tokens based on the response,
+ * and handles error responses by performing necessary actions.
+ */
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
     constructor(
@@ -37,6 +42,12 @@ export class AuthInterceptor implements HttpInterceptor {
         private _jwtProvider: JwtService) {
     }
 
+
+    /**
+     * Handles error responses from HTTP requests and performs necessary actions based on the error status.
+     * @param error The error object received from the HTTP response.
+     * @returns An Observable that emits the error.
+     */
     private handleError(error: any) {
         if (error instanceof HttpErrorResponse) {
 
@@ -75,6 +86,10 @@ export class AuthInterceptor implements HttpInterceptor {
         }
     }
 
+    /**
+     * Updates the authentication tokens in the local storage based on the response headers.
+     * @param response The HTTP response object containing the updated tokens.
+     */
     private updateTokens(response: HttpResponseBase): void {
         if (response.headers.has(REFRESHED_ID_TOKEN_HEADER_KEY)) {
             LocalStorageService.set(ID_TOKEN_KEY, response.headers.get(REFRESHED_ID_TOKEN_HEADER_KEY));
@@ -89,6 +104,13 @@ export class AuthInterceptor implements HttpInterceptor {
         }
     }
 
+    /**
+     * Adds an authorization token header to the given HTTP request.
+     * @param request The HTTP request to add the authorization token header to.
+     * @param tokenKey The key of the token header.
+     * @param token The token value.
+     * @returns A new HTTP request object with the authorization token header added.
+     */
     private addAuthTokenHeader(request: HttpRequest<any>, tokenKey: string, token: string): HttpRequest<any> {
         return request
             .clone({
@@ -96,6 +118,11 @@ export class AuthInterceptor implements HttpInterceptor {
             });
     }
 
+    /**
+     * Adds identity data to the given HTTP request and validates the session and ID tokens.
+     * @param request The HTTP request to add the identity data to.
+     * @returns An object containing the modified request, and flags indicating the validity of ID and session data.
+     */
     private addIdentityData(request: HttpRequest<any>)
         : { request: HttpRequest<any>, isValidIdData: boolean, isValidSessionData: boolean } {
 
@@ -165,6 +192,12 @@ export class AuthInterceptor implements HttpInterceptor {
         return { request: request, isValidIdData: isValidIdData, isValidSessionData: isValidSessionData };
     }
 
+    /**
+     * Intercepts HTTP requests and handles authentication and authorization.
+     * @param request The intercepted HTTP request.
+     * @param next The HTTP handler to forward the request to.
+     * @returns An Observable that emits the HTTP response events.
+     */
     intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
 
         let result: Observable<HttpEvent<any>> | null = EMPTY;

@@ -50,6 +50,7 @@ import {SessionStorageService} from '../../_services/sessionStorageService';
 import {ConfirmModalService} from '../confirm-modal/confirm-modal.service';
 import {DatabaseViewerComponent} from './database-viewer/database-viewer.component';
 import {Schema} from '../../_models/responses/database/schema.model';
+import {SavedQueriesComponent} from './saved-queries/saved-queries.component';
 
 declare var $: any;
 
@@ -63,6 +64,14 @@ const CHARACTER_VALIDATION_LIMIT: number = 5000;
 
 type TableSchemaViewModel = Table & { schema: string };
 
+/**
+ * Represents the Query Console component.
+ * @class
+ * @extends BaseComponent
+ * @implements OnInit
+ * @implements AfterViewInit
+ * @implements OnDestroy
+ */
 @Component({
     selector: 'app-query',
     templateUrl: './query-console.component.html',
@@ -214,6 +223,7 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
     // region ViewChild fields
 
     @ViewChild('databaseViewer') databaseViewer!: DatabaseViewerComponent;
+    @ViewChild('savedQueriesComponent') savedQueriesComponent!: SavedQueriesComponent;
     @ViewChild('textArea') textArea?: ElementRef;
     @ViewChild('consoleHandle') consoleHandle?: ElementRef;
     @ViewChild('resultHandle') resultHandle?: ElementRef;
@@ -231,6 +241,11 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
 
     // region Private Methods
 
+    /**
+     * Applies the query limit for the SQL abstract syntax tree (AST).
+     * @private
+     * @returns {void}
+     */
     private applyLimitForSqlAst(): void {
         this._queryList.flatMap(query => query.queryAst)!.forEach(sqlAst => {
             if (sqlAst?.type === 'select') {
@@ -260,6 +275,11 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
         });
     }
 
+    /**
+     * Validates the SQL schema and returns a list of errors.
+     * @private
+     * @returns {Annotation[]} List of annotation errors.
+     */
     private sqlValidator(): Annotation[] {
         this._isValidQuery = true;
         let errors: Annotation[] = [];
@@ -365,6 +385,13 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
         return errors;
     }
 
+    /**
+     * Adds the query execution to the code editor.
+     * @private
+     * @param {QueryViewModel} query - The query to execute.
+     * @param {number} queryIndex - The index of the query.
+     * @returns {void}
+     */
     private addQueryExecution(query: QueryViewModel, queryIndex: number): void {
         if (query.lines.length > 0) {
 
@@ -391,6 +418,14 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
         }
     }
 
+    /**
+     * Validates the SQL schema for a specific query and options.
+     * @private
+     * @param {QueryViewModel} query - The query to validate.
+     * @param {Option} option - The validation options.
+     * @throws {object} - Throws an exception when a validation error occurs.
+     * @returns {void}
+     */
     private validateSchema(query: QueryViewModel, option: Option): void {
         query.rawQuery = query.lines.map(line => line.text).join('\n');
 
@@ -624,7 +659,13 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
         }
     }
 
-
+    /**
+     * Executes the raw SQL query.
+     * @private
+     * @param {string} sql - The SQL query to execute.
+     * @param {boolean} [newTab=false] - Indicates if the results should be displayed in a new tab.
+     * @returns {Observable<any>} An observable with the query execution result.
+     */
     private executeRawSql(sql: string, newTab: boolean = false): Observable<any> {
         this._isExecuting = true;
 
@@ -743,7 +784,8 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
             $('body').popover({
                 html: true,
                 container: 'body',
-                selector: '[data-bs-toggle="popover"]'
+                selector: '[data-bs-toggle="popover"]',
+                trigger: 'focus'
             });
         });
 
@@ -867,6 +909,22 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
                             });
                         }
                     },
+                    'Alt-V': (cm: Editor) => {
+                        cm.addKeyMap({
+                            'Down': () => {
+                                this.savedQueriesComponent.goDown();
+                            },
+                            'Up': () => {
+                                this.savedQueriesComponent.goUp()
+                            },
+                            'Enter': () => {
+                                this.savedQueriesComponent.enter();
+                            }
+                        });
+
+                        let cursorCoords = this._codeEditor!.cursorCoords();
+                        this.savedQueriesComponent.showPopover(cursorCoords.left + 125, cursorCoords.top + 25);
+                    },
                     'Shift-Space': 'autocomplete',
                     'Ctrl-/': 'toggleComment',
                     'Ctrl-Y': CodeMirror.commands.deleteLine,
@@ -882,6 +940,11 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
                             }
                             cm.scrollIntoView();
                         });
+                    },
+                    'Alt-S': () => {
+                        if (this._rawQuery){
+                            this.savedQueriesComponent.showSaveModal(this._rawQuery);
+                        }
                     },
                     'Alt-Enter': () => {
                         this.execute();
@@ -919,14 +982,26 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
 
     // region Public Methods
 
+    /**
+     * Executes raw SQL query.
+     * @param data - The data object containing the SQL query and new tab flag.
+     */
     public onExecuteRawSql(data: { sql: string, newTab: boolean }) {
         this.executeRawSql(data.sql, data.newTab).subscribe();
     }
 
+    /**
+     * Selects a database.
+     * @param database - The selected database.
+     */
     public onSelectDatabase(database: Database) {
         this._selectedDatabase = database;
     }
 
+    /**
+     * Selects a schema.
+     * @param schema - The selected schema.
+     */
     public onSelectSchema(schema: Schema[]) {
         this.selectedDatabaseTables = [];
         this._schema = {};
@@ -950,6 +1025,10 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
         this._codeEditor?.performLint();
     }
 
+    /**
+     * Closes the result modal on pressing the Escape key.
+     * @param event - The keyboard event.
+     */
     @HostListener('document:keydown', ['$event'])
     closeResultModal(event: KeyboardEvent & { delegateTarget: any }): void {
         if (event.key == 'Escape' && this.tableViewPopupState && event.delegateTarget == null) {
@@ -957,6 +1036,11 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
         }
     }
 
+    /**
+     * Adds line selection in the code editor.
+     * @param startLineNumber - The start line number.
+     * @param endLineNumber - The end line number.
+     */
     addLineSelection(startLineNumber: number, endLineNumber: number): void {
         this._codeEditor?.extendSelection({
             ch: 0,
@@ -967,10 +1051,18 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
         });
     }
 
+    /**
+     * Removes line selection in the code editor.
+     */
     removeLineSelection(): void {
         this._codeEditor?.undoSelection();
     }
 
+    /**
+     * Gets the SQL query of a specific query index.
+     * @param queryIndex - The query index.
+     * @returns The SQL query string.
+     */
     getQuerySql(queryIndex?: number): string | undefined {
 
         let sql: string | undefined = undefined;
@@ -982,6 +1074,11 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
         return sql;
     }
 
+    /**
+     * Executes a query.
+     * @param queryIndex - The query index to execute.
+     * @param newTab - Flag indicating if a new tab should be opened.
+     */
     execute(queryIndex: number | undefined = undefined, newTab: boolean = false): void {
         this._console.pushSeparator();
         this._console.pushSuccess('Executing...');
@@ -1072,13 +1169,17 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
 
             this.console.pushWarning('Execution rejected. Reason: \'Select database before execution\'.');
 
-            console.log(this.databaseViewer);
-
             this.databaseViewer.databaseSelector?.nativeElement.classList.add('btn-outline-danger');
             this.databaseViewer.databaseSelector?.nativeElement.scrollIntoView();
         }
     }
 
+    /**
+     * Selects a query limit.
+     * @param element - The HTML element.
+     * @param value - The selected value.
+     * @param hideMenu - Flag indicating if the menu should be hidden.
+     */
     selectLimit(element: HTMLElement, value?: any, hideMenu: boolean = true): void {
 
         if (hideMenu)
@@ -1087,11 +1188,20 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
         this._queryLimit = value ? parseInt(value) : undefined;
     }
 
+    /**
+     * Handles resizing of the sidebar.
+     * @param value - The new size value.
+     */
     onResizeSidebar(value: number): void {
         if (this.queryMain)
             this.queryMain.nativeElement.style.width = (100 - value) + '%';
     }
 
+
+    /**
+     * Closes a result tab.
+     * @param resultIndex - The index of the result tab to close.
+     */
     closeResultTab(resultIndex: number): void {
         this.results.splice(resultIndex, 1);
 
@@ -1102,6 +1212,10 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
             this.selectedTableIndex--;
     }
 
+    /**
+     * Inserts a new line to the code editor.
+     * @param value - The value to insert.
+     */
     insertNewLineToEditor(value: string): void {
 
         if (this.rawQuery.length > 0)
@@ -1110,6 +1224,27 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
             this._codeEditor!.setValue(value);
     }
 
+    /**
+     * Inserts a value at the cursor position in the code editor.
+     * @param value - The value to insert.
+     */
+    insertAtCursor(value: string): void {
+        if (this._codeEditor?.getSelection()) {
+            this._codeEditor?.getDoc().replaceSelection(value);
+        } else {
+            this._codeEditor?.getDoc().replaceRange(value, this._codeEditor!.getCursor());
+        }
+
+        this._codeEditor?.scrollIntoView(this._codeEditor?.getCursor())
+        this._codeEditor?.focus();
+
+    }
+
+    /**
+     * Handles resizing of the sidebar content.
+     * @param sidebar - The sidebar element.
+     * @param navigation - The navigation element.
+     */
     onResizeSidebarContent(sidebar: HTMLDivElement, navigation: HTMLDivElement): void {
         if (sidebar.scrollHeight > sidebar.clientHeight) {
             navigation.classList.add('d-flex');
@@ -1120,6 +1255,23 @@ export class QueryConsoleComponent extends BaseComponent implements OnInit, Afte
         }
     }
 
+    /**
+     * Closes the popover and adds keymap to the code editor.
+     * @param event - The event object.
+     */
+    onClosePopover(event: any) {
+        this._codeEditor?.addKeyMap({
+            'Down': 'goLineDown',
+            'Up': 'goLineUp',
+            'Enter': 'newlineAndIndent'
+        });
+    }
+
+    /**
+     * Scrolls to a specified position in an element.
+     * @param element - The HTML element to scroll.
+     * @param scrollTo - The position to scroll to.
+     */
     scrollTo(element: HTMLElement, scrollTo: number): void {
         $(element).animate({scrollTop: scrollTo});
     }

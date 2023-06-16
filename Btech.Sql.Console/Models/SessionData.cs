@@ -2,6 +2,9 @@ using Newtonsoft.Json;
 
 namespace Btech.Sql.Console.Models;
 
+/// <summary>
+/// Represents a user session.
+/// </summary>
 public class SessionData
 {
     public string AccessToken { get; set; }

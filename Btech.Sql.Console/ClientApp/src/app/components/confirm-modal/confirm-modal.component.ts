@@ -3,6 +3,9 @@ import {Subject} from 'rxjs';
 
 declare var $: any;
 
+/**
+ * Component for displaying a confirmation modal dialog.
+ */
 @Component({
     selector: 'app-confirm-modal',
     templateUrl: './confirm-modal.component.html',
@@ -19,18 +22,30 @@ export class ConfirmModalComponent implements AfterViewInit {
     private _declineButtonText: string = 'Decline';
     private _subject: Subject<boolean> = new Subject<boolean>();
 
+    /**
+     * Gets the subject that emits a boolean value indicating whether the user confirmed or declined the dialog.
+     */
     get subject(): Subject<boolean> {
         return this._subject;
     }
 
+    /**
+     * Gets the question or message displayed in the confirmation dialog.
+     */
     get question(): string {
         return this._question;
     }
 
+    /**
+     * Gets the text for the confirm button.
+     */
     get confirmButtonText(): string {
         return this._confirmButtonText;
     }
 
+    /**
+     * Gets the text for the decline button.
+     */
     get declineButtonText(): string {
         return this._declineButtonText;
     }
@@ -43,6 +58,12 @@ export class ConfirmModalComponent implements AfterViewInit {
         });
     }
 
+    /**
+     * Sets up the confirmation dialog with custom question and button texts.
+     * @param question The question or message to display in the dialog.
+     * @param confirmButtonText The text for the confirm button.
+     * @param declineButtonText The text for the decline button.
+     */
     setup(
         question?: string,
         confirmButtonText?: string,
@@ -58,11 +79,19 @@ export class ConfirmModalComponent implements AfterViewInit {
             this._declineButtonText = declineButtonText;
     }
 
+    /**
+     * Handles the confirm action and emits a `true` value through the subject.
+     * Hides the confirmation dialog.
+     */
     confirmAction(): void {
         this._subject.next(true);
         $(this.modal?.nativeElement).modal('hide');
     }
 
+    /**
+     * Handles the decline action and emits a `false` value through the subject.
+     * Hides the confirmation dialog.
+     */
     declineAction(): void {
         this._subject.next(false);
         $(this.modal?.nativeElement).modal('hide');

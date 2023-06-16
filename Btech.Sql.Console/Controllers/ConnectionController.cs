@@ -17,10 +17,20 @@ using ServiceCollectionExtensions = Btech.Sql.Console.Extensions.ServiceCollecti
 
 namespace Btech.Sql.Console.Controllers;
 
+/// <summary>
+/// Represents a controller that handles requests related to database connections, and requires user authorization.
+/// </summary>
 [Controller]
 [Route("api/connection")]
 public class ConnectionController : UserAuthorizedControllerBase
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ConnectionController"/> class with the specified dependencies.
+    /// </summary>
+    /// <param name="logger">The logger used for logging.</param>
+    /// <param name="jwtProvider">The JWT provider used for generating and validating JSON Web Tokens.</param>
+    /// <param name="connectorFactory">The factory used for creating instances of connectors for connecting to database instances.</param>
+    /// <param name="sessionStorage">The storage used for persisting session data.</param>
     public ConnectionController(
         ILogger<ConnectionController> logger,
         JwtProvider jwtProvider,
@@ -37,6 +47,11 @@ public class ConnectionController : UserAuthorizedControllerBase
     private JwtProvider JwtProvider { get; }
     private IConnectorFactory ConnectorFactory { get; }
 
+    /// <summary>
+    /// Opens a new connection to the database instance specified in the <paramref name="connectionRequest"/> parameter, using the credentials specified in the request.
+    /// </summary>
+    /// <param name="connectionRequest">The request containing the credentials to use when opening the connection.</param>
+    /// <returns>A response object containing an authentication token response, if the connection was successfully opened, or an error message, if the connection failed.</returns>
     [HttpPost("open")]
     [ValidateModel]
     public async Task<Response<AuthTokenResponse>> OpenAsync([FromBody] ConnectionRequest connectionRequest)
@@ -121,6 +136,10 @@ public class ConnectionController : UserAuthorizedControllerBase
         return response;
     }
 
+    /// <summary>
+    /// Endpoint for closing a database connection by deleting the database session from the session storage.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [HttpGet("close")]
     [Authorize(Constants.Identity.SessionAuthorizationPolicyName)]
     public async Task<Response> CloseAsync()
@@ -139,6 +158,10 @@ public class ConnectionController : UserAuthorizedControllerBase
         return response;
     }
 
+    /// <summary>
+    /// Retrieves a static connection token for the application, based on environment variables and the current session storage scheme.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation. The task result contains a response object containing the connection token data.</returns>
     [HttpGet("static-connection")]
     public Task<Response<AuthTokenResponse>> GetStaticConnectionAsync()
     {

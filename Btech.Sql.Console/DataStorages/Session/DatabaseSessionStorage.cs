@@ -5,10 +5,18 @@ using Btech.Sql.Console.Models;
 using Btech.Sql.Console.Models.Database;
 using Microsoft.EntityFrameworkCore;
 
-namespace Btech.Sql.Console.DataStorages;
+namespace Btech.Sql.Console.DataStorages.Session;
 
+/// <summary>
+/// Implementation of ISessionStorage interface that uses database to store session data.
+/// </summary>
 public class DatabaseSessionStorage : ISessionStorage<SessionData>
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DatabaseSessionStorage"/> class with the specified dependencies.
+    /// </summary>
+    /// <param name="logger">The logger instance to use.</param>
+    /// <param name="unitOfWorkFactory">The factory instance to use for creating unit of work instances.</param>
     public DatabaseSessionStorage(ILogger<DatabaseSessionStorage> logger, IUnitOfWorkFactory unitOfWorkFactory)
     {
         this.Logger = logger;
@@ -20,6 +28,7 @@ public class DatabaseSessionStorage : ISessionStorage<SessionData>
 
     #region Public Methods
 
+    /// <inheritdoc />
     public async Task<bool> SaveAsync(string email, SessionData data)
     {
         // TODO: shouldn’t we check if a user already has a connection to a specific instance and close an existing one?
@@ -43,6 +52,7 @@ public class DatabaseSessionStorage : ISessionStorage<SessionData>
         return true;
     }
 
+    /// <inheritdoc />
     public async Task<bool> UpdateAsync(string email, SessionData updatedSessionData)
     {
         bool result = false;
@@ -105,6 +115,7 @@ public class DatabaseSessionStorage : ISessionStorage<SessionData>
         return result;
     }
 
+    /// <inheritdoc />
     public async Task<bool> DeleteAsync(string email)
     {
         await using (IUnitOfWork unitOfWork = this.UnitOfWorkFactory.GetUnitOfWork())
@@ -125,6 +136,7 @@ public class DatabaseSessionStorage : ISessionStorage<SessionData>
         return true;
     }
 
+    /// <inheritdoc />
     public async Task<SessionData> GetAsync(string email)
     {
         SessionData sessionData = null;

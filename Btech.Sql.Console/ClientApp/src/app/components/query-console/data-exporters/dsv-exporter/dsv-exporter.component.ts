@@ -16,6 +16,9 @@ import {ResponseBase} from '../../../../_models/responses/base/response';
 
 declare var $: any;
 
+/**
+ * Component for exporting data to a delimited-separated values (DSV) file.
+ */
 @Component({
     selector: 'dsv-exporter',
     templateUrl: './dsv-exporter.component.html'
@@ -24,6 +27,9 @@ export class DsvExporterComponent implements OnInit {
 
     // region Readonly Public Fields
 
+    /**
+     * An array of newline options for the DSV file.
+     */
     readonly newLines: { name: string, value: string }[] = [
         {
             name: '\\n',
@@ -39,6 +45,9 @@ export class DsvExporterComponent implements OnInit {
         }
     ];
 
+    /**
+     * An array of null output options for the DSV file.
+     */
     readonly nullOutputs: { name: string, value: string }[] = [
         {
             name: 'Empty column',
@@ -101,6 +110,12 @@ export class DsvExporterComponent implements OnInit {
 
     @Input() modalId?: string;
 
+    /**
+     * Constructs a new instance of DsvExporterComponent.
+     *
+     * @param _queryService - The service for executing queries.
+     * @param _confirmService - The service for displaying confirmation modals.
+     */
     constructor(private _queryService: QueryService, private _confirmService: ConfirmModalService) {
         this._formGroup = new FormGroup({
             filename: new FormControl<string>('table',
@@ -259,6 +274,10 @@ export class DsvExporterComponent implements OnInit {
 
     // region Public Methods
 
+    /**
+     * Event handler for rejecting the ongoing export.
+     * Prompts for confirmation before canceling the export.
+     */
     rejectExporting(): void {
         this._confirmService.confirm('Are you sure to cancel the exporting?')
             .subscribe(result => {
@@ -270,6 +289,10 @@ export class DsvExporterComponent implements OnInit {
             })
     }
 
+    /**
+     * Initiates the export process.
+     * Determines whether to export directly or execute a query for the export.
+     */
     export(): void {
         if (this._isExecuteToDsv) {
             this.executeToDsv();
@@ -278,6 +301,11 @@ export class DsvExporterComponent implements OnInit {
         }
     }
 
+    /**
+     * Opens the export modal for exporting result table data.
+     *
+     * @param data - The result table data to export.
+     */
     openExportToDsvModal(data: ResultTable | undefined): void {
         this._isExecuteToDsv = false;
         this._data = data;
@@ -285,6 +313,12 @@ export class DsvExporterComponent implements OnInit {
         $(`#${this.modalId}`).modal('toggle');
     }
 
+    /**
+     * Opens the export modal for executing a query and exporting the result to DSV.
+     *
+     * @param sql - The SQL query to execute.
+     * @param database - The name of the database.
+     */
     openExecuteToDsvModal(sql: string | undefined, database: string | undefined): void {
         this._isExecuteToDsv = true;
         this._sql = sql;
@@ -293,6 +327,12 @@ export class DsvExporterComponent implements OnInit {
         $(`#${this.modalId}`).modal('toggle');
     }
 
+    /**
+     * Retrieves the error messages from validation errors.
+     *
+     * @param errors - The validation errors.
+     * @returns An array of error messages.
+     */
     getErrors(errors: ValidationErrors | null): string[] {
         let errorList: string[] = [];
 

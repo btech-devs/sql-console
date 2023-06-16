@@ -1,18 +1,20 @@
+using System.Reflection;
 using System.Text;
 using Btech.Core.Database.Extensions;
 using Btech.Sql.Console.Configurations;
-using Btech.Sql.Console.DataStorages;
+using Btech.Sql.Console.DataStorages.Query;
+using Btech.Sql.Console.DataStorages.Session;
 using Btech.Sql.Console.Enums;
 using Btech.Sql.Console.Exceptions;
 using Btech.Sql.Console.Factories;
 using Btech.Sql.Console.Identity;
 using Btech.Sql.Console.Interfaces;
 using Btech.Sql.Console.Models;
-using Btech.Sql.Console.Models.Database;
 using Btech.Sql.Console.Providers;
 using Btech.Sql.Console.Services;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json.Converters;
+using Database = Btech.Sql.Console.Models.Database;
 
 namespace Btech.Sql.Console.Extensions;
 
@@ -82,27 +84,11 @@ public static class ServiceCollectionExtensions
                             info: new OpenApiInfo { Title = "btech-sql-console", Version = "v1" });
 
                     options
-                        .TagActionsBy(
-                            tagsSelector: endpoint =>
-                            {
-                                List<string> result = new();
-
-                                string[] relativePathParts = endpoint.RelativePath?.Split("/");
-
-                                if (relativePathParts?.Length is >= 1 and <= 2)
-                                    result.Add(endpoint.RelativePath?.Split("/")[0]);
-                                else if (relativePathParts?.Length is >= 2 and <= 3)
-                                    result.Add($"{endpoint.RelativePath?.Split("/")[0]}/{endpoint.RelativePath?.Split("/")[1]}");
-                                else if (relativePathParts?.Length is >= 4 and <= 5)
-                                    result.Add($"{endpoint.RelativePath?.Split("/")[0]}/{endpoint.RelativePath?.Split("/")[1]}/{endpoint.RelativePath?.Split("/")[3]}");
-                                else if (relativePathParts?.Length is >= 6 and <= 7)
-                                    result.Add($"{endpoint.RelativePath?.Split("/")[0]}/{endpoint.RelativePath?.Split("/")[1]}/{endpoint.RelativePath?.Split("/")[3]}/{endpoint.RelativePath?.Split("/")[5]}");
-
-                                return result;
-                            });
-
-                    options
                         .CustomSchemaIds(type => type.GetSchemaId());
+
+                    string filePath = Path.Combine(AppContext.BaseDirectory, $"{Assembly.GetExecutingAssembly().GetName().Name}.xml");
+
+                    options.IncludeXmlComments(filePath);
                 });
     }
 
@@ -137,8 +123,7 @@ public static class ServiceCollectionExtensions
         else if (!Environment.GetEnvironmentVariable(Core.Database.Constants.Environment.Database.Host).IsNullOrEmpty() &&
                  !Environment.GetEnvironmentVariable(Core.Database.Constants.Environment.Database.Name).IsNullOrEmpty() &&
                  !Environment.GetEnvironmentVariable(Core.Database.Constants.Environment.Database.User).IsNullOrEmpty() &&
-                 !Environment.GetEnvironmentVariable(Core.Database.Constants.Environment.Database.Password).IsNullOrEmpty() &&
-                 Environment.GetEnvironmentVariable(Constants.EnvironmentEnvironmentVariableName) != Environments.Development)
+                 !Environment.GetEnvironmentVariable(Core.Database.Constants.Environment.Database.Password).IsNullOrEmpty())
         {
             scheme = SessionStorageScheme.RemoteDatabase;
         }
@@ -176,10 +161,12 @@ public static class ServiceCollectionExtensions
 
             case SessionStorageScheme.RemoteDatabase:
                 serviceCollection
-                    .AddEFModel<UserSession>()
-                    .AddEFModel<DatabaseSession>()
+                    .AddEFModel<Database.UserSession>()
+                    .AddEFModel<Database.DatabaseSession>()
+                    .AddEFModel<Database.SavedQuery>()
                     .AddDatabaseLayer(typeof(Program).Assembly)
-                    .AddSingleton<ISessionStorage<SessionData>, DatabaseSessionStorage>();
+                    .AddSingleton<ISessionStorage<SessionData>, DatabaseSessionStorage>()
+                    .AddSingleton<ISavedQueryStorage, DatabaseSavedQueryStorage>();
 
                 break;
 
@@ -194,7 +181,8 @@ public static class ServiceCollectionExtensions
                 serviceCollection
                     .AddScoped<GoogleCloudSecretManagerService>()
                     .AddConfigurationTransient(BuildSecretManagerServiceConfiguration())
-                    .AddSingleton<ISessionStorage<SessionData>, GoogleCloudSecretManagerSessionStorage>();
+                    .AddSingleton<ISessionStorage<SessionData>, GoogleCloudSecretManagerSessionStorage>()
+                    .AddSingleton<ISavedQueryStorage, GoogleCloudSecretManagerSavedQueryStorage>();
 
                 break;
         }

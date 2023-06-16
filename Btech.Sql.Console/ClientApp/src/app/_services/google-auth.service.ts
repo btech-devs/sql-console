@@ -14,6 +14,9 @@ import {
 @Injectable()
 export class GoogleAuthService extends BaseService {
 
+    /**
+     * The endpoint URL for connection-related API requests.
+     */
     private readonly endpoint: string = '/api/google-auth';
 
     private readonly defaultScopes: string = 'profile email openid';

@@ -8,38 +8,113 @@ import {SessionAuthGuard} from './_auth/session-auth.guard';
 import {HttpContext, HttpContextToken} from '@angular/common/http';
 import {QueryConsoleComponent} from './components/query-console/query-console.component';
 
+/**
+ * Key for storing the ID token in local storage.
+ */
 export const ID_TOKEN_KEY = 'sql-console-id-token';
+
+/**
+ * Key for storing the account picture URL in local storage.
+ */
 export const ACCOUNT_PICTURE_URL_KEY = 'sql-console-account-picture-url';
+
+/**
+ * Key for storing the session token in local storage.
+ */
 export const SESSION_TOKEN_KEY = 'sql-console-session-token';
+
+/**
+ * Key for storing the refresh token in local storage.
+ */
 export const REFRESH_TOKEN_KEY = 'sql-console-refresh-token';
+
+/**
+ * Key for storing the value indicating if the connection is static in local storage.
+ */
 export const IS_STATIC_CONNECTION_KEY = 'is-static-connection';
+
+/**
+ * Key for storing the JWT public key in local storage.
+ */
 export const JWT_PUBLIC_KEY_KEY = 'sql-console-jwt-public-key';
 
+/**
+ * Key for the refreshed ID token header.
+ */
 export const REFRESHED_ID_TOKEN_HEADER_KEY = 'refreshed-id-token';
+
+/**
+ * Key for the refreshed session token header.
+ */
 export const REFRESHED_SESSION_TOKEN_HEADER_KEY = 'refreshed-session-token';
+
+/**
+ * Key for the refreshed refresh token header.
+ */
 export const REFRESHED_REFRESH_TOKEN_HEADER_KEY = 'refreshed-refresh-token';
+
+/**
+ * Key for the identity error header.
+ */
 export const IDENTITY_ERROR_HEADER_KEY = 'identity-error';
 
+/**
+ * Error constant for failed ID authentication.
+ */
 export const ID_AUTH_FAILED_ERROR = 'IdAuthenticationFailed';
+
+/**
+ * Error constant for failed session authentication.
+ */
 export const SESSION_AUTH_FAILED_ERROR = 'SessionAuthenticationFailed';
 
+/**
+ * Path constant for the error component.
+ */
 export const PATH_ERROR = 'error';
+
+/**
+ * Path constant for the query console component.
+ */
 export const PATH_CONSOLE = 'console';
+
+/**
+ * Path constant for the connection component.
+ */
 export const PATH_CONNECTION = 'connection';
+
+/**
+ * Path constant for the Google authorization component.
+ */
 export const PATH_GOOGLE_AUTHORIZATION = 'google-auth';
 
+/**
+ * Token for identity context in HTTP requests.
+ */
 export const IDENTITY_CONTEXT_TOKEN = new HttpContextToken<number>(() => IdentityContextTokenValue.Default);
 
+/**
+ * Creates an `HttpContext` with the specified token value.
+ * @param tokenValue - The value of the identity context token.
+ * @returns The created `HttpContext`.
+ */
 export function IdentityContext(tokenValue: number = IdentityContextTokenValue.Default): HttpContext {
     return new HttpContext().set(IDENTITY_CONTEXT_TOKEN, tokenValue);
 }
 
+/**
+ * Enum for the possible values of the identity context token.
+ */
 export enum IdentityContextTokenValue {
     Default,
     Id,
     Full
 }
 
+/**
+ * Returns the routes configuration for the application.
+ * @returns The routes configuration.
+ */
 export function getRoutes(): Routes {
     return [
         {
@@ -72,6 +147,10 @@ export function getRoutes(): Routes {
     ];
 }
 
+/**
+ * Returns the animation trigger metadata for transition animations.
+ * @returns The animation trigger metadata.
+ */
 export function getTransitionAnimation(): AnimationTriggerMetadata {
     return trigger(
         'transitionAnimation', [
@@ -87,7 +166,11 @@ export function getTransitionAnimation(): AnimationTriggerMetadata {
     );
 }
 
-/** Sets a prototype for an object or each list element. */
+/**
+ * Sets a prototype for an object or each list element.
+ * @param o - The object or list to set the prototype for.
+ * @param prototype - The prototype object.
+ */
 export function setPrototype(o: any, prototype: object): void {
     if (Array.isArray(o))
         o.forEach(e => Object.setPrototypeOf(e, prototype));
@@ -95,12 +178,21 @@ export function setPrototype(o: any, prototype: object): void {
         Object.setPrototypeOf(o, prototype);
 }
 
+/**
+ * Returns the headers object for HTTP requests.
+ * @returns The headers object.
+ */
 export function getHeaders(): { [_: string]: string } {
     return {
         'Content-Type': 'application/json'
     };
 }
 
+/**
+ * Formats the given size in bytes to a human-readable string.
+ * @param size - The size in bytes.
+ * @returns The formatted size string.
+ */
 export function formatBytes(size: number): string {
     const units = ['B', 'KB', 'MB', 'GB'];
 
@@ -114,6 +206,11 @@ export function formatBytes(size: number): string {
     return (size.toFixed(size < 10 && size > 0 ? 1 : 0) + ' ' + units[length]);
 }
 
+/**
+ * Formats the given duration in milliseconds to a human-readable string.
+ * @param duration - The duration in milliseconds.
+ * @returns The formatted duration string.
+ */
 export function formatMilliSeconds(duration: number): string {
     const units = ['ms', 's', 'm'];
 
@@ -132,6 +229,9 @@ export function formatMilliSeconds(duration: number): string {
     return (duration.toFixed(duration < 10 && duration > 0 ? 1 : 0) + units[length]);
 }
 
+/**
+ * Array of separators for data import/export.
+ */
 export const separators: {
     name: string,
     value: string,
@@ -158,6 +258,9 @@ export const separators: {
     }
 ];
 
+/**
+ * Utility class for storing error and information messages.
+ */
 export class AlertStorage {
     private static readonly _errorMessageMaxLength: number = 180;
     private static readonly _infoMessageMaxLength: number = 120;

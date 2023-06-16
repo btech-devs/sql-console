@@ -5,6 +5,10 @@ using Newtonsoft.Json;
 
 namespace Btech.Sql.Console.Base;
 
+/// <summary>
+/// Represents an abstract class that provides storage for sessions of a generic type T.
+/// </summary>
+/// <typeparam name="T">The type of data to be stored in the session.</typeparam>
 public abstract class RawDataSessionStorage<T> : ISessionStorage<T>
     where T : class
 {

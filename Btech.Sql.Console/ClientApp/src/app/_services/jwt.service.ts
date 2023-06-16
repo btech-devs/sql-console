@@ -3,12 +3,23 @@ import {verify, decode} from 'jws';
 import {LocalStorageService} from './localStorageService';
 import {AlertStorage, JWT_PUBLIC_KEY_KEY} from '../utils';
 
+/**
+ * Service for JSON Web Token (JWT) operations.
+ * It provides functionality to verify and validate JWT tokens.
+ */
 @Injectable()
 export class JwtService {
 
     constructor() {
     }
 
+    /**
+     * Verifies the signature of a JWT token using the provided public key.
+     * @param token The JWT token to verify.
+     * @param publicKey The public key used for signature verification.
+     * @returns A boolean value indicating whether the signature is valid.
+     * @throws An error if the signature verification fails.
+     */
     private verifySignature(token: string, publicKey: string) : boolean {
 
         let decodedJwt = decode(token);
@@ -27,6 +38,12 @@ export class JwtService {
         return true;
     }
 
+    /**
+     * Verifies the validity of a JWT token by verifying its signature using the stored public key.
+     * @param token The JWT token to verify.
+     * @returns A boolean value indicating whether the token is valid.
+     * @throws An error if the public key is not found or the signature verification fails.
+     */
     private verifyToken(token: string) : boolean {
 
         let result : boolean = false;
@@ -42,6 +59,12 @@ export class JwtService {
         return result;
     }
 
+    /**
+     * Validates a JWT token by verifying its signature and checking its expiration.
+     * @param token The JWT token to validate.
+     * @returns An object with `isValid` and `isExpired` properties indicating the token's validity and expiration status.
+     * @throws An error if the token verification or decoding fails.
+     */
     validateToken(token: string) : { isValid: boolean, isExpired: boolean } {
 
         let isValid: boolean = true;

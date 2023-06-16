@@ -10,8 +10,16 @@ using Grpc.Core;
 
 namespace Btech.Sql.Console.Services;
 
+/// <summary>
+/// Service for interacting with Google Cloud Secret Manager.
+/// </summary>
 public class GoogleCloudSecretManagerService
 {
+    /// <summary>
+    /// Creates a new instance of the <see cref="GoogleCloudSecretManagerService"/> class.
+    /// </summary>
+    /// <param name="logger">The logger to use for logging.</param>
+    /// <param name="config">The configuration to use for the service.</param>
     public GoogleCloudSecretManagerService(
         ILogger<GoogleCloudSecretManagerService> logger, GoogleAccountJsonConfiguration config)
     {
@@ -40,6 +48,11 @@ public class GoogleCloudSecretManagerService
         return client;
     }
 
+    /// <summary>
+    /// Creates a new secret with the specified name.
+    /// </summary>
+    /// <param name="secretName">The name of the secret to create.</param>
+    /// <returns>The newly created secret.</returns>
     public async Task<Secret> CreateSecretAsync(string secretName)
     {
         Secret secret;
@@ -78,6 +91,12 @@ public class GoogleCloudSecretManagerService
         return secret;
     }
 
+    /// <summary>
+    /// Adds a new version to the specified secret.
+    /// </summary>
+    /// <param name="secretName">The name of the secret to add the version to.</param>
+    /// <param name="payloadData">The payload data for the new version.</param>
+    /// <returns>The newly created secret version.</returns>
     public async Task<SecretVersion> AddSecretVersion(string secretName, string payloadData)
     {
         SecretVersion secretVersion;
@@ -113,6 +132,10 @@ public class GoogleCloudSecretManagerService
         return secretVersion;
     }
 
+    /// <summary>
+    /// Deletes the specified secret.
+    /// </summary>
+    /// <param name="secretName">The name of the secret to delete.</param>
     public async Task DeleteSecretAsync(string secretName)
     {
         try
@@ -142,6 +165,12 @@ public class GoogleCloudSecretManagerService
         }
     }
 
+    /// <summary>
+    /// Gets the specified version of the specified secret.
+    /// </summary>
+    /// <param name="secretName">The name of the secret to get the version of.</param>
+    /// <param name="secretVersionId">The ID of the version to get.</param>
+    /// <returns>The specified secret version.</returns>
     public async Task<AccessSecretVersionResponse> GetSecretVersion(string secretName, string secretVersionId)
     {
         AccessSecretVersionResponse secretVersion = null;

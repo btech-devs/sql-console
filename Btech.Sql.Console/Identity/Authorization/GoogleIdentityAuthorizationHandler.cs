@@ -7,8 +7,16 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace Btech.Sql.Console.Identity.Authorization;
 
+/// <summary>
+/// Handles authorization for Google Identity authentication scheme.
+/// </summary>
 public class GoogleIdentityAuthorizationHandler : AuthorizationHandlerBase<GoogleIdentityAuthorizationRequirement>
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GoogleIdentityAuthorizationHandler"/> class.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="iamService">The IAM authorization service instance.</param>
     public GoogleIdentityAuthorizationHandler(
         ILogger<GoogleIdentityAuthorizationHandler> logger, IamAuthorizationService iamService)
         : base(logger)
@@ -18,6 +26,12 @@ public class GoogleIdentityAuthorizationHandler : AuthorizationHandlerBase<Googl
 
     private IamAuthorizationService IamService { get; }
 
+    /// <summary>
+    /// Handles the authorization requirement for Google Identity authentication scheme.
+    /// </summary>
+    /// <param name="context">The authorization context.</param>
+    /// <param name="requirement">The authorization requirement.</param>
+    /// <returns>The task representing the authorization handling process.</returns>
     protected override async Task HandleRequirementAsync(
         AuthorizationHandlerContext context, GoogleIdentityAuthorizationRequirement requirement)
     {

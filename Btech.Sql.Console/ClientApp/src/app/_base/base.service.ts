@@ -86,5 +86,23 @@ export abstract class BaseService {
             .pipe(shareReplay(1));
     }
 
+    /**
+     * Sends a DELETE HTTP request ({@link HttpClient.delete}).
+     * @param url - An HTTP URL.
+     * @param headers - An additional headers (optional).
+     * @param context - An additional data for interceptor (e.x. 'idToken' required etc.) (optional).
+     */
+    protected requestDelete<T>(
+        url: string, headers: HttpHeaders | null = null, context: HttpContext = IdentityContext())
+        : Observable<T> {
+        return this.HttpClient.delete<T>(
+            url,
+            {
+                headers: headers != null ? headers : getHeaders(),
+                context: context
+            })
+            .pipe(shareReplay(1));
+    }
+
     // ↑ methods
 }

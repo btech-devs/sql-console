@@ -3,8 +3,17 @@ using System.Text.RegularExpressions;
 
 namespace Btech.Sql.Console.Extensions;
 
+/// <summary>
+/// Provides extension methods for converting various data types.
+/// </summary>
 public static class ConvertExtensions
 {
+    /// <summary>
+    /// Converts the specified value to a nullable boolean value.
+    /// </summary>
+    /// <typeparam name="T">The type of the value.</typeparam>
+    /// <param name="value">The value to convert.</param>
+    /// <returns>A nullable boolean value representing the converted value, or null if the conversion fails.</returns>
     public static bool? ToNullableBool<T>(this T value)
     {
         bool? result = null;

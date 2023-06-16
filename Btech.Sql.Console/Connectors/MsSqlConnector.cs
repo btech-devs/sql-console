@@ -19,7 +19,7 @@ public class MsSqlConnector : ConnectorBase
 
     public override DbCommand CreateCommand(string sql = null) => new SqlCommand(sql, this.Connection);
 
-    protected override bool NeedQuotes(string postgresTypeName)
+    protected override bool NeedQuotes(string columnDataType)
     {
         string[] notQuotesTypes =
         {
@@ -43,7 +43,7 @@ public class MsSqlConnector : ConnectorBase
             "dec"
         };
 
-        return !notQuotesTypes.Contains(postgresTypeName);
+        return !notQuotesTypes.Contains(columnDataType);
     }
 
     protected override string ConvertToInsertSql(

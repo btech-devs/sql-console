@@ -23,10 +23,21 @@ using RestSharp.Serializers.NewtonsoftJson;
 
 namespace Btech.Sql.Console.Controllers;
 
+/// <summary>
+/// Controller that handles Google OAuth2 authorization.
+/// Inherits from <see cref="UserAuthorizedControllerBase"/>, which requires Google authentication for all actions.
+/// </summary>
 [Controller]
 [Route("api/google-auth")]
 public class GoogleAuthorizationController : UserAuthorizedControllerBase
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GoogleAuthorizationController"/> class.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="sessionStorage">The session storage instance.</param>
+    /// <param name="iamAuthorizationService">The IAM authorization service instance.</param>
+    /// <param name="googleProjectConfiguration">The Google project configuration instance.</param>
     public GoogleAuthorizationController(
         ILogger<GoogleAuthorizationController> logger, ISessionStorage<SessionData> sessionStorage,
         IamAuthorizationService iamAuthorizationService, GoogleProjectConfiguration googleProjectConfiguration)
@@ -72,6 +83,15 @@ public class GoogleAuthorizationController : UserAuthorizedControllerBase
         }
     }
 
+    /// <summary>
+    /// Exchanges an authorization code obtained from the client-side authentication flow with Google OAuth2
+    /// for access and refresh tokens, and then saves the tokens in the session storage.
+    /// </summary>
+    /// <param name="clientRequest">A <see cref="TokenRequest"/> object containing the authorization code
+    /// and redirect URI provided by the client-side authentication flow.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation that returns a
+    /// <see cref="Response{T}"/> object containing an <see cref="AuthorizationResponse"/> object if the exchange
+    /// is successful, or an error message if the exchange fails.</returns>
     [HttpPost("exchange-code")]
     [AllowAnonymous]
     [ValidateModel]
@@ -241,6 +261,10 @@ public class GoogleAuthorizationController : UserAuthorizedControllerBase
         return outResponse;
     }
 
+    /// <summary>
+    /// Closes the user's session by revoking Google tokens and deleting the session from the session storage.
+    /// </summary>
+    /// <returns>A response object indicating the status of the operation.</returns>
     [HttpGet("close-session")]
     [AllowAnonymous]
     public async Task<Response> CloseSessionAsync()

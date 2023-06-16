@@ -15,7 +15,7 @@ public class PgSqlConnector : ConnectorBase
 
     #region Override Methods
 
-    protected override bool NeedQuotes(string postgresTypeName)
+    protected override bool NeedQuotes(string columnDataType)
     {
         string[] notQuotesTypes =
         {
@@ -31,7 +31,7 @@ public class PgSqlConnector : ConnectorBase
             "boolean"
         };
 
-        return !notQuotesTypes.Contains(postgresTypeName);
+        return !notQuotesTypes.Contains(columnDataType);
     }
 
     public override NpgsqlConnection Connection { get; }

@@ -30,6 +30,8 @@ import {ConfirmModalComponent} from './components/confirm-modal/confirm-modal.co
 import {ConfirmModalService} from './components/confirm-modal/confirm-modal.service';
 import {DatabaseViewerComponent} from './components/query-console/database-viewer/database-viewer.component';
 import {SizeChangeDirective} from './directives/size-change.directive';
+import {SavedQueriesService} from './_services/saved-queries.service';
+import {SavedQueriesComponent} from './components/query-console/saved-queries/saved-queries.component';
 
 @NgModule({
     declarations: [
@@ -48,6 +50,7 @@ import {SizeChangeDirective} from './directives/size-change.directive';
         ResizableRow,
         ResizableCol,
         CopyClick,
+        SavedQueriesComponent,
         SizeChangeDirective,
         GoogleAuthorizationComponent
     ],
@@ -66,6 +69,7 @@ import {SizeChangeDirective} from './directives/size-change.directive';
         GoogleAuthGuard,
         QueryService,
         DatabaseService,
+        SavedQueriesService,
         ConfirmModalService,
         GoogleAuthService,
         MetadataService,
