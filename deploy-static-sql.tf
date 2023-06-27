@@ -158,7 +158,7 @@
 #
 #      env {
 #        name = "STATIC_HOST"
-#        value = var.gcp_sql_connection_name
+#        value = "/cloudsql/${var.gcp_sql_connection_name}"
 #      }
 #
 #      env {
