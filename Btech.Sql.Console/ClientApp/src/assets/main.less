@@ -568,21 +568,39 @@ h1 {
   --bs-btn-hover-color: #000;
   --bs-btn-hover-bg: #dea700;
   --bs-btn-hover-border-color: #dea700;
-  --bs-btn-focus-shadow-rgb: 255,193,7;
+  --bs-btn-focus-shadow-rgb: 255, 193, 7;
   --bs-btn-active-color: #000;
   --bs-btn-active-bg: #dea700;
   --bs-btn-active-border-color: #dea700;
-  --bs-btn-active-shadow: inset 0 3px 5pxrgba(0, 0, 0, 0.125);
+  --bs-btn-active-shadow: inset 0 3px 5 pxrgba(0, 0, 0, 0.125);
   --bs-btn-disabled-color: #dea700;
   --bs-btn-disabled-bg: transparent;
   --bs-btn-disabled-border-color: #dea700;
   --bs-gradient: none;
 }
 
-.dropdown-item{
+.dropdown-item {
   --bs-dropdown-link-active-bg: #6c757d;
 }
 
 .account-button.show {
   --bs-border-color: @color-gray;
+}
+
+.scroll-sql {
+  &::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+  }
+
+  &::-webkit-scrollbar-track {
+    border-radius: 10px;
+    background: #efefef;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #dddddd;
+    border-radius: 4px;
+    cursor: pointer;
+  }
 }
