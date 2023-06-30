@@ -1,51 +1,52 @@
 ## initialize variables
 #
 #variable "gcp_project" {
-#  type = string
+#  type        = string
 #  description = "GCP project ID"
 #}
 #
 #variable "gcp_region" {
-#  type = string
+#  type        = string
 #  description = "GCP region (e.g. europe-west1)"
 #}
 #
 #variable "gcp_oauth_client_id" {
-#  type = string
+#  type        = string
 #  description = "GCP OAuth Client ID"
 #}
 #
 #variable "gcp_oauth_client_secret" {
-#  type = string
+#  type        = string
 #  description = "GCP OAuth Client secret"
 #}
 #
 #variable "gcp_sql_instance_type" {
-#  type = string
+#  type        = string
 #  description = "GCP SQL instance type (PgSql or MsSql) - env var STATIC_INSTANCE_TYPE"
 #}
 #
 #variable "gcp_sql_host" {
-#  type = string
+#  type        = string
 #  description = "GCP SQL instance port - env var STATIC_HOST"
 #}
 #
 #variable "gcp_sql_port" {
-#  type = string
+#  type        = string
 #  description = "GCP SQL instance port - env var STATIC_PORT"
 #}
 #
 #variable "gcp_sql_user" {
-#  type = string
+#  type        = string
 #  description = "GCP SQL instance user - env var STATIC_USER"
 #}
 #
 #variable "gcp_sql_password" {
-#  type = string
+#  type        = string
 #  description = "GCP SQL instance user password - env var STATIC_PASSWORD"
 #}
 #
 ## create a VPC connector (to connect via a private IP)
+#
 #resource "google_vpc_access_connector" "connector" {
 #  project       = var.gcp_project
 #  name          = var.gcp_project
@@ -84,25 +85,6 @@
 #  content   = base64decode(google_service_account_key.sa_key.private_key)
 #}
 #
-## generate RSA key pair
-#
-#resource "null_resource" "create_rsa_private_key" {
-#  provisioner "local-exec" {
-#    command = "openssl genrsa -out ${path.module}/sql-console-private.pem 1024"
-#  }
-#}
-#
-#resource "null_resource" "create_rsa_public_key" {
-#  provisioner "local-exec" {
-#    command = "openssl rsa -in ${path.module}/sql-console-private.pem -pubout -out ${path.module}/sql-console-public.pem"
-#  }
-#}
-#
-#locals {
-#  rsa_private_key_file = file("${path.module}/sql-console-private.pem")
-#  rsa_public_key_file = file("${path.module}/sql-console-public.pem")
-#}
-#
 ## create a Docker container image
 #
 #resource "null_resource" "create_docker_repository" {
@@ -117,10 +99,17 @@
 #  }
 #}
 #
+## enable Cloud Run Admin API
+#
+#resource "google_project_service" "cloud_run_api" {
+#  project = var.gcp_project
+#  service = "run.googleapis.com"
+#}
+#
 ## create a Cloud Run service
 #
 #resource "google_cloud_run_v2_service" "sql_console_service" {
-#  project = var.gcp_project
+#  project   = var.gcp_project
 #  name      = "sql-console"
 #  location  = var.gcp_region
 #  ingress   = "INGRESS_TRAFFIC_ALL"
@@ -156,12 +145,12 @@
 #
 #      env {
 #        name = "CRYPTOGRAPHY_PRIVATE_KEY"
-#        value = local.rsa_private_key_file
+#        value = file("${path.module}/sql-console-private.pem")
 #      }
 #
 #      env {
 #        name = "CRYPTOGRAPHY_PUBLIC_KEY"
-#        value = local.rsa_public_key_file
+#        value = file("${path.module}/sql-console-public.pem")
 #      }
 #
 #      env {
@@ -196,12 +185,15 @@
 #      max_instance_count = 10
 #    }
 #
-#    # create a VPC connector (to connect via a private IP)
 #    vpc_access {
 #      connector = google_vpc_access_connector.connector.id
 #      egress = "ALL_TRAFFIC"
 #    }
 #  }
+#
+#  depends_on = [
+#    google_project_service.cloud_run_api
+#  ]
 #}
 #
 #resource "google_cloud_run_service_iam_binding" "allow_unauthenticated" {

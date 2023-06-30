@@ -8,6 +8,7 @@
         <SpaProxyLaunchCommand>npm start</SpaProxyLaunchCommand>
         <ImplicitUsings>enable</ImplicitUsings>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
 
     <ItemGroup>
@@ -33,18 +34,21 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Btech.Core.Database\Btech.Core.Database.csproj" />
+        <ProjectReference Include="..\Btech.Core.Database\Btech.Core.Database.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <None Remove="Migrations\Scripts\001.create-auth_session.pgsql" />
-      <EmbeddedResource Include="Migrations\Scripts\001.create-user_sessions.pgsql">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </EmbeddedResource>
-      <None Remove="Migrations\Scripts\002.create-db_session.pgsql" />
-      <EmbeddedResource Include="Migrations\Scripts\002.create-db_sessions.pgsql">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </EmbeddedResource>
+        <EmbeddedResource Include="Migrations\Scripts\003.create-saved_queries.pgsql">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </EmbeddedResource>
+        <None Remove="Migrations\Scripts\001.create-auth_session.pgsql" />
+        <EmbeddedResource Include="Migrations\Scripts\001.create-user_sessions.pgsql">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </EmbeddedResource>
+        <None Remove="Migrations\Scripts\002.create-db_session.pgsql" />
+        <EmbeddedResource Include="Migrations\Scripts\002.create-db_sessions.pgsql">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </EmbeddedResource>
     </ItemGroup>
 
     <Target Name="DebugEnsureNodeEnv" BeforeTargets="Build" Condition=" '$(Configuration)' == 'Debug' And !Exists('$(SpaRoot)node_modules') ">

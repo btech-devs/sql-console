@@ -2,13 +2,14 @@
 
 This application was implemented to be deployed in Google Cloud Platform as a **Cloud Run** service to connect to GCP SQL and AlloyDB instances.
 
-# Before creating a Cloud Run service
+# Before applying a Terraform script
 
 Create API client credentials (required for Google authorization)
 1. create OAuth consent screen https://console.cloud.google.com/apis/credentials/consent
 2. create `OAuth client ID` credentials https://console.cloud.google.com/apis/credentials
    - choose `Web application` in **Application type** section
    - add `[your_cloud_run_service_url]/google-auth` into **Authorized redirect URIs** section
+3. run `generate-rsa.sh`
 
 # Connection types
 

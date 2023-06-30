@@ -1,48 +1,49 @@
 ## initialize variables
 #
 #variable "gcp_project" {
-#  type = string
+#  type        = string
 #  description = "GCP project ID"
 #}
 #
 #variable "gcp_region" {
-#  type = string
+#  type        = string
 #  description = "GCP region (e.g. europe-west1)"
 #}
 #
 #variable "gcp_oauth_client_id" {
-#  type = string
+#  type        = string
 #  description = "GCP OAuth Client ID"
 #}
 #
 #variable "gcp_oauth_client_secret" {
-#  type = string
+#  type        = string
 #  description = "GCP OAuth Client secret"
 #}
 #
 ## add an SQL instance connection (to connect via a connection name)
+#
 #variable "gcp_sql_connection_name" {
-#  type = string
+#  type        = string
 #  description = "GCP SQL instance connection name - env var STATIC_HOST"
 #}
 #
 #variable "gcp_sql_instance_type" {
-#  type = string
+#  type        = string
 #  description = "GCP SQL instance type (PgSql or MsSql) - env var STATIC_INSTANCE_TYPE"
 #}
 #
 #variable "gcp_sql_port" {
-#  type = string
+#  type        = string
 #  description = "GCP SQL instance port - env var STATIC_PORT"
 #}
 #
 #variable "gcp_sql_user" {
-#  type = string
+#  type        = string
 #  description = "GCP SQL instance user - env var STATIC_USER"
 #}
 #
 #variable "gcp_sql_password" {
-#  type = string
+#  type        = string
 #  description = "GCP SQL instance user password - env var STATIC_PASSWORD"
 #}
 #
@@ -76,25 +77,6 @@
 #  content   = base64decode(google_service_account_key.sa_key.private_key)
 #}
 #
-## generate RSA key pair
-#
-#resource "null_resource" "create_rsa_private_key" {
-#  provisioner "local-exec" {
-#    command = "openssl genrsa -out ${path.module}/sql-console-private.pem 1024"
-#  }
-#}
-#
-#resource "null_resource" "create_rsa_public_key" {
-#  provisioner "local-exec" {
-#    command = "openssl rsa -in ${path.module}/sql-console-private.pem -pubout -out ${path.module}/sql-console-public.pem"
-#  }
-#}
-#
-#locals {
-#  rsa_private_key_file = file("${path.module}/sql-console-private.pem")
-#  rsa_public_key_file = file("${path.module}/sql-console-public.pem")
-#}
-#
 ## create a Docker container image
 #
 #resource "null_resource" "create_docker_repository" {
@@ -109,10 +91,17 @@
 #  }
 #}
 #
+## enable Cloud Run Admin API
+#
+#resource "google_project_service" "cloud_run_api" {
+#  project = var.gcp_project
+#  service = "run.googleapis.com"
+#}
+#
 ## create a Cloud Run service
 #
 #resource "google_cloud_run_v2_service" "sql_console_service" {
-#  project = var.gcp_project
+#  project   = var.gcp_project
 #  name      = "sql-console"
 #  location  = var.gcp_region
 #  ingress   = "INGRESS_TRAFFIC_ALL"
@@ -122,69 +111,68 @@
 #      image = "${var.gcp_region}-docker.pkg.dev/${var.gcp_project}/sql-console-repo/sql-console"
 #
 #      env {
-#        name = "CLIENT_ID"
+#        name  = "CLIENT_ID"
 #        value = var.gcp_oauth_client_id
 #      }
 #
 #      env {
-#        name = "CLIENT_SECRET"
+#        name  = "CLIENT_SECRET"
 #        value = var.gcp_oauth_client_secret
 #      }
 #
 #      env {
-#        name = "IAM_SERVICE_ACCOUNT_EMAIL"
+#        name  = "IAM_SERVICE_ACCOUNT_EMAIL"
 #        value = google_service_account.service_account.email
 #      }
 #
 #      env {
-#        name = "IAM_SERVICE_ACCOUNT_CONFIG_JSON"
+#        name  = "IAM_SERVICE_ACCOUNT_CONFIG_JSON"
 #        value = local_file.sa_key_file.content
 #      }
 #
 #      env {
-#        name = "IAM_SERVICE_GRANTED_ROLES"
+#        name  = "IAM_SERVICE_GRANTED_ROLES"
 #        value = "cloudsql.admin,cloudsql.editor,cloudsql.client,owner,editor"
 #      }
 #
 #      env {
-#        name = "CRYPTOGRAPHY_PRIVATE_KEY"
-#        value = local.rsa_private_key_file
+#        name  = "CRYPTOGRAPHY_PRIVATE_KEY"
+#        value = file("${path.module}/sql-console-private.pem")
 #      }
 #
 #      env {
-#        name = "CRYPTOGRAPHY_PUBLIC_KEY"
-#        value = local.rsa_public_key_file
+#        name  = "CRYPTOGRAPHY_PUBLIC_KEY"
+#        value = file("${path.module}/sql-console-public.pem")
 #      }
 #
 #      env {
-#        name = "STATIC_HOST"
+#        name  = "STATIC_HOST"
 #        value = "/cloudsql/${var.gcp_sql_connection_name}"
 #      }
 #
 #      env {
-#        name = "STATIC_INSTANCE_TYPE"
+#        name  = "STATIC_INSTANCE_TYPE"
 #        value = var.gcp_sql_instance_type
 #      }
 #
 #      env {
-#        name = "STATIC_PORT"
+#        name  = "STATIC_PORT"
 #        value = var.gcp_sql_port
 #      }
 #
 #      env {
-#        name = "STATIC_USER"
+#        name  = "STATIC_USER"
 #        value = var.gcp_sql_user
 #      }
 #
 #      env {
-#        name = "STATIC_PASSWORD"
+#        name  = "STATIC_PASSWORD"
 #        value = var.gcp_sql_password
 #      }
 #
-#      # add an SQL instance connection (to connect via a connection name)
 #      volume_mounts {
-#        name = "cloudsql"
-#        mount_path = "/cloudsql"
+#        name        = "cloudsql"
+#        mount_path  = "/cloudsql"
 #      }
 #    }
 #
@@ -193,7 +181,6 @@
 #      max_instance_count = 10
 #    }
 #
-#    # add an SQL instance connection (to connect via a connection name)
 #    volumes {
 #      name = "cloudsql"
 #      cloud_sql_instance {
@@ -201,6 +188,10 @@
 #      }
 #    }
 #  }
+#
+#  depends_on = [
+#    google_project_service.cloud_run_api
+#  ]
 #}
 #
 #resource "google_cloud_run_service_iam_binding" "allow_unauthenticated" {
