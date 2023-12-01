@@ -198,7 +198,7 @@ public class IamAuthorizationService
             if (policyGrantedRoles.Any())
             {
                 List<Binding> userRoles = policyGrantedRoles
-                    .Where(role => role.Members.Contains($"user:{userEmail}"))
+                    .Where(role => role.Members.Any(member => member.ToLower() == $"user:{userEmail.ToLower()}"))
                     .ToList();
 
                 isAllowed = userRoles.Any();
